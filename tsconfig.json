@@ -1,0 +1,19 @@
+{
+	"include": ["./src/*.ts", "./tests/unit/*.ts"],
+	"compilerOptions": {
+		"target": "es2016",
+		"module": "NodeNext",
+		"lib": ["ES2017"],
+		"esModuleInterop": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"emitDecoratorMetadata": true,
+		"declaration": true,
+		"declarationDir": "./dist/dts",
+		"moduleResolution": "NodeNext",
+		"experimentalDecorators": true,
+		"allowImportingTsExtensions": false,
+		"allowArbitraryExtensions": false,
+		"noEmit": true
+	}
+}
