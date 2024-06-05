@@ -1,8 +1,15 @@
 import type { PipeTransform } from "@nestjs/common";
 import type { Object as JsonObject, Primitive as JsonPrimitive, Value as JsonValue } from "json-typescript";
 import type { FilterQuery, HydratedDocument, SortOrder } from "mongoose";
-import { ListOperator, LogicalOperator, type SearchField, type SearchFieldComparison, ValueOperator } from "./api.js";
-import type { EntityConverter, PartialWithId, SimpleType } from "./index.js";
+import {
+	type FlattenObject,
+	ListOperator,
+	LogicalOperator,
+	type SearchField,
+	type SearchFieldComparison,
+	ValueOperator,
+} from "./api.js";
+import type { EntityConverter, PartialWithId } from "./index.js";
 import { regexEscaper } from "./utils.js";
 
 export function toMongoOperator<
@@ -96,29 +103,31 @@ export function toMongoSort(input: Array<string>): Record<string, SortOrder> {
 }
 
 /**
- * A preconfigured converter that output a MongoDB as is come from the database
+ * A preconfigured converter that output a MongoDB Entity as is come from the database
  */
-export class OneToOneConverter<Entity extends SimpleType, Data extends JsonObject = JsonObject>
-	implements EntityConverter<Entity, Entity, Data, Data, Data>
+export class OneToOneConverter<Entity extends JsonObject = JsonObject>
+	implements EntityConverter<Entity, Entity, Entity, Entity>
 {
-	fromCreator(input: Partial<Data>): Partial<Entity> {
-		return input as unknown as Partial<Entity>;
+	fromCreator(input: Partial<Entity>): Partial<Entity> {
+		return input;
 	}
 
-	fromUpdater(id: string, input: Partial<Data>): PartialWithId<Entity> {
+	fromUpdater(id: string, input: Partial<Entity>): PartialWithId<Entity> {
 		return { ...input, _id: id } as unknown as PartialWithId<Entity>;
 	}
 
-	toDto(input: Entity | HydratedDocument<Entity>): Data {
-		return input as unknown as Data;
+	toDto(input: Partial<Entity> | HydratedDocument<Entity>): Partial<Entity> {
+		return input;
 	}
 
 	fromSearchable(input?: SearchField<Entity> | undefined): FilterQuery<Entity> {
 		return input != null ? toMongoFilterQuery(input) : {};
 	}
 
-	fromDtoFields(fields?: Array<keyof Data> | undefined): Array<keyof Entity> | undefined {
-		return fields as Array<keyof Entity> | undefined;
+	fromDtoFields(
+		fields?: Array<keyof FlattenObject<Entity>> | undefined,
+	): Array<keyof FlattenObject<Entity>> | undefined {
+		return fields;
 	}
 
 	fromDtoSort(sort?: Array<string> | undefined): Record<string, SortOrder> | undefined {
@@ -131,10 +140,6 @@ export class OneToOneConverter<Entity extends SimpleType, Data extends JsonObjec
 // @ts-ignore
 export abstract class BaseDto<Data extends JsonObject = JsonObject> implements JsonObject, Data {
 	[any: string]: JsonValue;
-
-	[Symbol.toPrimitive](): Data {
-		return Object(this);
-	}
 }
 
 export class CommaListPipe implements PipeTransform {
@@ -159,6 +164,16 @@ export class RelativeUrl {
 	}
 	setParam(name: string, value: string): this {
 		this.url.searchParams.set(name, value);
+		return this;
+	}
+	removeParam(name: string): this {
+		this.url.searchParams.delete(name);
+		return this;
+	}
+	onlyKeepParams(names: Array<string>): this {
+		for (const key of this.url.searchParams.keys()) {
+			if (!names.includes(key)) this.url.searchParams.delete(key);
+		}
 		return this;
 	}
 	toString(): string {

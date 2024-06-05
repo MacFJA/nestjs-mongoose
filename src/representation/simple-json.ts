@@ -32,7 +32,7 @@ function ApiResourceSwaggerSchema<Dto extends JsonObject>(attribute: Type<Dto>):
 
 /* c8 ignore end */
 
-const SimpleJson: Representation<JsonObject, JsonObject, JsonObject> = {
+const SimpleJson: Representation = {
 	contentType: "application/json",
 
 	getCollectionResponseSwaggerExtension<Dto extends JsonObject>(

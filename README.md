@@ -59,16 +59,16 @@ export class CatController extends MongooseControllerFactory(Cat.name, new CatCo
 //                                                           ^^^^^^^^
 //                                                           Same as the value of the MongooseModule.forFeature
 ```
-To get the automatic CRUD controller, we need to extend the function `MongooseControllerFactory`, which take 6 parameters (the last one is optional):
+To get the automatic CRUD controller, we need to extend the function `MongooseControllerFactory`, which take 6 parameters (Only the first two are mandatory):
 ```ts
-declare function MongooseControllerFactory<Resource, Dto extends JsonObject, Searchable extends SimpleType, Creator extends JsonObject, Updater extends JsonObject>(
+declare function MongooseControllerFactory<Resource, Dto extends JsonObject, Creator extends JsonObject, Updater extends JsonObject>(
     modelInjectionName: string,
-    converter: EntityConverter<Resource, Searchable, Dto, Creator, Updater>,
+    converter: EntityConverter<Resource, Dto, Creator, Updater>,
     dtoConstructor?: Type<Dto>,
     creatorConstructor?: Type<Creator>,
     updaterConstructor?: Type<Updater>,
     options?: MongooseControllerOptions<Dto, Creator, Updater>
-): Type<MongooseController<Dto, Searchable, Creator, Updater>>;
+): Type<MongooseController<Dto, Creator, Updater>>;
 ```
 
 - `modelInjectionName` is the name linked to the schema (same as declared in `MongooseModule.forFeature`)
@@ -88,7 +88,7 @@ Let's see how the DTO (i.e. `src/cat/cat.dto.ts`) are:
 import { BaseDto } from "@macfja/nestjs-mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 
-export class CatDto extends BaseDto implements CatDtoType {
+export class CatDto extends BaseDto<CatDtoType> {
     constructor(name: string, breed: string, age: number) {
         super();
         this.name = name;
@@ -108,11 +108,6 @@ export type CatDtoType = {
     breed: string;
     age: number;
 };
-
-export type CatSearchableDto = {
-    name?: string;
-    breed?: string;
-};
 ```
 `BaseDto` is a helper class to ease the typing, and it's completely optional.
 
@@ -121,6 +116,7 @@ export type CatSearchableDto = {
 Let's take a look on the converter (i.e. `src/cat/cat.converter.ts`):
 ```ts
 import {
+    type DotKeys,
     type EntityConverter,
     type PartialWithId,
     type SearchField,
@@ -128,11 +124,11 @@ import {
     toMongoSort,
 } from "@macfja/nestjs-mongoose";
 import { type FilterQuery, type HydratedDocument, type SortOrder, Types } from "mongoose";
-import { CatDto, type CatDtoType, type CatSearchableDto } from "./cat.dto";
+import { CatDto } from "./cat.dto";
 import type { Cat } from "./cat.schema";
 
-export class CatConverter implements EntityConverter<Cat, CatSearchableDto, CatDto> {
-    fromDtoFields(fields?: Array<keyof CatDtoType>): Array<keyof Cat> {
+export class CatConverter implements EntityConverter<Cat, CatDto, CatDto, CatDto> {
+    fromDtoFields(fields?: Array<DotKeys<CatDto>>): Array<DotKeys<Cat>> {
         return fields
             ?.filter((field) => ["name", "age", "breed"].includes(field))
             .map((field) => {
@@ -146,26 +142,26 @@ export class CatConverter implements EntityConverter<Cat, CatSearchableDto, CatD
                 }
                 return false;
             })
-            .filter(Boolean) as Array<keyof Cat>;
+            .filter(Boolean) as Array<DotKeys<Cat>>;
     }
     fromDtoSort(sort?: Array<string>): Record<string, SortOrder> {
         return toMongoSort(sort ?? []);
     }
-    toDto(input: HydratedDocument<Cat>): CatDto {
+    toDto(input: HydratedDocument<Cat>): Partial<CatDto> {
         return new CatDto(input.name, input.breed, input.age);
     }
 
-    fromSearchable(input?: SearchField<CatSearchableDto>): FilterQuery<Cat> {
+    fromSearchable(input?: SearchField<CatDto>): FilterQuery<Cat> {
         return toMongoFilterQuery(input);
     }
 
-    fromCreator(input: Partial<CatDtoType>): Partial<Cat> {
+    fromCreator(input: Partial<CatDto>): Partial<Cat> {
         return {
             ...input,
         };
     }
 
-    fromUpdater(id: string, input: Partial<CatDtoType>): PartialWithId<Cat> {
+    fromUpdater(id: string, input: Partial<CatDto>): PartialWithId<Cat> {
         return {
             ...input,
             _id: new Types.ObjectId(id),
@@ -185,7 +181,7 @@ The converter do 6 transformation:
 `@macfja/nestjs-mongoose` come with all sort of helper to ease the creation of a converter:
 - `toMongoFilterQuery()`: Transform a received filter into a MongoDB query filter
 - `toMongoSort()`: Transform a list of field name and negate field name into a MongoDB sort parameter
-- `class OneToOneConverter`: A preconfigured converter that output a MongoDB as is come from the database
+- `class OneToOneConverter`: A preconfigured converter that output a MongoDB Entity  as is come from the database
 
 ---
 
@@ -213,15 +209,22 @@ type MongooseControllerOptions<Dto extends JsonObject, Creator extends JsonObjec
     logger: LoggerService;
     resourceType: string;
     representations: Array<Representation<Dto, Creator, Updater>>;
-    operators: typeof Operators;
-    operatorValidator: Partial<{
-        escapeInvalidLogicalOperator: boolean;
-        throwOnInvalidOperator: boolean;
+    filter: Partial<{
+        operators: typeof Operators;
+        actionOnInvalid: FilterParserAction;
+        fields: Partial<{
+            exclude: Array<string>;
+            add: Array<string>;
+        }>;
+    }>;
+    sort: Partial<{
+        exclude: Array<string>;
+        add: Array<string>;
     }>;
 }>;
 ```
 
-- `disable`, It allow to remove some part of teh controller:
+- `disable`, It allow to remove some part of the controller:
     - `list`: if `true`, the listing of document is removed from the controller (default: `false`)
     - `get`: if `true`, getting one document from its id is removed from the controller (default: `false`)
     - `update`: if `true`, updating one document is removed from the controller (default: `false`)
@@ -235,13 +238,18 @@ type MongooseControllerOptions<Dto extends JsonObject, Creator extends JsonObjec
 - `urlResolver`, The [`ProblemDetail`](https://github.com/sjfrhafe/nest-problem-details?tab=readme-ov-file#customize-auto-type-generation) error resolver (default: `undefined` => Resolve URL to `https://httpstatuses.com/`)
 - `logger`, The logger to use. Used by `ProblemDetail` (default: `undefined` => no log)
 - `resourceType`, The name of the resource to display in the outputs. Used for Json:Api, HAL (default: `undefined` => same as the `modelInjectionName` provided to the factory)
-- `outputFormats`, The list of document representation standard to use (default: `[instance of JsonApi, instance of Hal]`)
-- `operators`, List of operators to display in the swagger (default: `[ "$eq", "$neq", "$gt", "$gte", "$lt", "$lte", "$start", "$end", "$regex", "$null", "$def", "$in", "$nin", "$or", "$and" ]`)
-- `operatorValidator`, defined how the operators parser/validator react on invalid value:
-  - `escapeInvalidLogicalOperator`, if `true` and `$and` or `$or` are defined but not allowed, escape the operator (add `\` before the operator), otherwise use the same behavior defined by `throwOnInvalidOperator` (default: `false`)
-  - `throwOnInvalidOperator`, if `true` and a not allowed operator is present, throw an 400 error, otherwise, remove the operator from the filter (default: `true`)
+- `representations`, The list of document representation standard to use (default: `[instance of JsonApi, instance of Hal]`)
+- `filter`, Configuration of the list filter:
+    - `operators`, List of operators to display in the swagger (default: `[ "$eq", "$neq", "$gt", "$gte", "$lt", "$lte", "$start", "$end", "$regex", "$null", "$def", "$in", "$nin", "$or", "$and" ]`)
+    - `actionOnInvalid`, Define how the filter parser should handle invalid operator or field. (default: `FilterParserAction.THROW`)
+    - `fields`, Filter fields options:
+        - `exclude`, List of field to remove (default: `[]`)
+        - `add`, List of field to add (default: `[]`)
+- `sort`, Filter fields options:
+    - `exclude`, List of field to remove (default: `[]`)
+    - `add`, List of field to add (default: `[]`)
 
-### Custom data representation (input and ouput)
+### Custom data representation (input and output)
 
 The library come with 4 built-in representation:
 - `JsonApi`, which implement the [`{json:api}` spec](https://jsonapi.org/) and support:
@@ -297,7 +305,7 @@ The property `contentType` indicate the output MIME type of your representation,
     - `id` is the identifier of the document to update
     - If an error occurs wil validating/parsing the input, a `ProblemDetailException` (or any exception) can be thrown
 
-`OneResponseSwaggerExtension`, `CollectionResponseSwaggerExtension`, `CreateRequestSwaggerExtension`, `UpdateRequestSwaggerExtension` all extends the interface
+`OneResponseSwaggerExtension`, `CollectionResponseSwaggerExtension`, `CreateRequestSwaggerExtension`, `UpdateRequestSwaggerExtension` all extends the interface, and are used to describe a OpenApi resource
 ```ts
 type SwaggerExtensionMaker<Input extends JsonObject = JsonObject> = (
     attribute: Type<Input>,
@@ -334,9 +342,9 @@ import { Cat } from "./cat.schema";
 @ApiTags("Cat Api")
 export class CatController extends MongooseControllerFactory(Cat.name, new CatConverter(), CatDto, CatDto, CatDto) {
     @GetOneDecorator(CatDto, Cat.name, [JsonApi, Hal])
-    override async getOne(response: e.Response, request: e.Request, id: string, fields?: unknown): Promise<JsonObject> {
+    override async getOne(response: e.Response, request: e.Request, id: string, fields?: unknown, accept?: unknown): Promise<JsonObject> {
         // Do something cool with the input params
-        const result = await super.getOne(response, request, id, fields);
+        const result = await super.getOne(response, request, id, fields, accept);
         // Do something cool with the output
         return result;
     }
@@ -372,4 +380,4 @@ This library is a slightly different list of operator
 | `$or`                     | `$or`                          |
 | `$and`                    | `$and`                         |
 
-The library handle the case where several `$regex`, `$eq`, `$ne` would appear in the MongoDB request if the function `toMongoFilterQuery` is used
+The library handle the case where several `$regex`, `$eq`, `$ne` would appear in the MongoDB request if the function `toMongoFilterQuery()` is used

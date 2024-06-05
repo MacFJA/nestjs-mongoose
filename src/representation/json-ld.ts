@@ -74,7 +74,7 @@ function getResourceSwaggerSchema<Dto extends JsonObject>(
 	};
 }
 
-export function JsonLdFactory(context: string): Representation<JsonObject, JsonObject, JsonObject> {
+export function JsonLdFactory(context: string): Representation {
 	function toEntity<Dto extends JsonObject>(id: string, type: string, resource: Dto): JsonObject {
 		return {
 			"@id": id,

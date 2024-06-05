@@ -12,8 +12,6 @@
 		"declarationDir": "./dist/dts",
 		"moduleResolution": "NodeNext",
 		"experimentalDecorators": true,
-		"allowImportingTsExtensions": false,
-		"allowArbitraryExtensions": false,
 		"noEmit": true
 	}
 }

@@ -1,5 +1,5 @@
 import test from "ava";
-import { bound, objectMap, regexEscaper, wrap } from "../../src/utils.js";
+import { addExcludeArray, bound, filterArray, flatObjectKeys, objectMap, regexEscaper, wrap } from "../../src/utils.js";
 import { inputTitle, title } from "../_helpers.js";
 
 for (const [input, expected] of [
@@ -79,3 +79,54 @@ for (const [input, expected] of [
 		t.is(bound(min, value, max, fallback), expected),
 	);
 }
+
+test(title(flatObjectKeys, "Flat source"), (t) => {
+	t.deepEqual(flatObjectKeys({ foo: 1, bar: 1 }), ["foo", "bar"]);
+});
+test(title(flatObjectKeys, "Nested object"), (t) => {
+	t.deepEqual(flatObjectKeys({ foo: { bar: 1 } }), ["foo.bar"]);
+});
+test(title(flatObjectKeys, "Nested object, with parent"), (t) => {
+	t.deepEqual(flatObjectKeys({ foo: { bar: 1 } }, true), ["foo", "foo.bar"]);
+});
+
+test(title(addExcludeArray, "3 empty"), (t) => {
+	t.deepEqual(addExcludeArray([], [], []), []);
+});
+test(title(addExcludeArray, "no add, no exclude"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], [], []), ["foo", "bar"]);
+});
+test(title(addExcludeArray, "no exclude"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], ["hello", "world"], []), ["foo", "bar", "hello", "world"]);
+});
+test(title(addExcludeArray, "duplicate, no exclude"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], ["foo"], []), ["foo", "bar", "foo"]);
+});
+test(title(addExcludeArray, "exclude unknown"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], ["hello"], ["world"]), ["foo", "bar", "hello"]);
+});
+test(title(addExcludeArray, "exclude from base"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], ["hello"], ["foo"]), ["bar", "hello"]);
+});
+test(title(addExcludeArray, "exclude from add"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], ["hello"], ["hello"]), ["foo", "bar"]);
+});
+test(title(addExcludeArray, "exclude from both"), (t) => {
+	t.deepEqual(addExcludeArray(["foo", "bar"], ["hello"], ["hello", "bar"]), ["foo"]);
+});
+
+test(title(filterArray, "2 empty"), (t) => {
+	t.deepEqual(filterArray([], []), []);
+});
+test(title(filterArray, "allowed empty"), (t) => {
+	t.deepEqual(filterArray(["foo", "bar"], []), []);
+});
+test(title(filterArray, "allowed unmatched"), (t) => {
+	t.deepEqual(filterArray([], ["foo", "bar"]), []);
+});
+test(title(filterArray, "partial matched"), (t) => {
+	t.deepEqual(filterArray(["foo", "bar"], ["foo"]), ["foo"]);
+});
+test(title(filterArray, "all matched"), (t) => {
+	t.deepEqual(filterArray(["foo", "bar"], ["foo", "bar"]), ["foo", "bar"]);
+});

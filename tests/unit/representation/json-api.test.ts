@@ -3,9 +3,9 @@ import test from "ava";
 import { ProblemDetailException } from "@sjfrhafe/nest-problem-details";
 import type { JsonObject } from "../../../src/index.js";
 import JsonApi from "../../../src/representation/json-api.js";
-import { genericTitle, inputTitle, title } from "../../_helpers.js";
+import { genericTitle, inputTitle, property, title } from "../../_helpers.js";
 
-test(genericTitle(JsonApi.renderOne), (t) => {
+test(genericTitle(property("JsonApi", JsonApi.renderOne)), (t) => {
 	t.deepEqual(
 		JsonApi.renderOne("123", "people", "/people/123", {
 			firstName: "John",
@@ -50,7 +50,7 @@ const pageData = [
 	{ id: "8", type: "color", attributes: { name: "teal" } },
 ];
 
-test(title(JsonApi.renderPage, "One page"), (t) => {
+test(title(property("JsonApi", JsonApi.renderPage), "One page"), (t) => {
 	t.deepEqual(
 		JsonApi.renderPage(
 			"color",
@@ -78,7 +78,7 @@ test(title(JsonApi.renderPage, "One page"), (t) => {
 	);
 });
 
-test(title(JsonApi.renderPage, "page 1/3"), (t) => {
+test(title(property("JsonApi", JsonApi.renderPage), "page 1/3"), (t) => {
 	t.deepEqual(
 		JsonApi.renderPage("color", "/colors?page[size]=10&page[number]=1", 27, { size: 10, current: 1 }, pageResources),
 		{
@@ -101,7 +101,7 @@ test(title(JsonApi.renderPage, "page 1/3"), (t) => {
 	);
 });
 
-test(title(JsonApi.renderPage, "page 2/3"), (t) => {
+test(title(property("JsonApi", JsonApi.renderPage), "page 2/3"), (t) => {
 	t.deepEqual(
 		JsonApi.renderPage("color", "/colors?page[size]=10&page[number]=1", 27, { size: 10, current: 2 }, pageResources),
 		{
@@ -125,7 +125,7 @@ test(title(JsonApi.renderPage, "page 2/3"), (t) => {
 	);
 });
 
-test(title(JsonApi.renderPage, "page 3/3"), (t) => {
+test(title(property("JsonApi", JsonApi.renderPage), "page 3/3"), (t) => {
 	t.deepEqual(
 		JsonApi.renderPage("color", "/colors?page[size]=10&page[number]=1", 27, { size: 10, current: 3 }, pageResources),
 		{
@@ -148,7 +148,7 @@ test(title(JsonApi.renderPage, "page 3/3"), (t) => {
 	);
 });
 
-test(title(JsonApi.parseCreateRequest, "valid"), (t) => {
+test(title(property("JsonApi", JsonApi.parseCreateRequest), "valid"), (t) => {
 	t.deepEqual(
 		JsonApi.parseCreateRequest(
 			{
@@ -172,12 +172,12 @@ test(title(JsonApi.parseCreateRequest, "valid"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "root"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "root"), (t) => {
 	t.throws(() => JsonApi.parseCreateRequest("foobar" as unknown as JsonObject, "people"), {
 		instanceOf: ProblemDetailException,
 	});
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "data"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "data"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -191,7 +191,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "data"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "data.type"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "data.type"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -213,7 +213,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "data.type"), (t) =>
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "data.attributes"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "data.attributes"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -230,7 +230,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Invalid type", "data.attributes"), 
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Invalid content", "type"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid content", "type"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -252,7 +252,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Invalid content", "type"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Missing node", "data"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Missing node", "data"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -272,7 +272,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Missing node", "data"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Missing node", "data.type"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Missing node", "data.type"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -293,7 +293,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Missing node", "data.type"), (t) =>
 		},
 	);
 });
-test(inputTitle(JsonApi.parseCreateRequest, "Missing node", "data.attributes"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Missing node", "data.attributes"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseCreateRequest(
@@ -314,7 +314,7 @@ test(inputTitle(JsonApi.parseCreateRequest, "Missing node", "data.attributes"), 
 	);
 });
 
-test(title(JsonApi.parseUpdateRequest, "valid"), (t) => {
+test(title(property("JsonApi", JsonApi.parseUpdateRequest), "valid"), (t) => {
 	t.deepEqual(
 		JsonApi.parseUpdateRequest(
 			{
@@ -340,7 +340,7 @@ test(title(JsonApi.parseUpdateRequest, "valid"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid content", "type"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid content", "type"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -364,7 +364,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Invalid content", "type"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid content", "id"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid content", "id"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -388,7 +388,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Invalid content", "id"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -410,7 +410,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data.type"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data.type"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -433,7 +433,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data.type"), (t) =>
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data.attributes"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data.attributes"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -455,7 +455,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data.attributes"), 
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data.id"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data.id"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -478,12 +478,12 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Missing node", "data.id"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "root"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "root"), (t) => {
 	t.throws(() => JsonApi.parseUpdateRequest("foobar" as unknown as JsonObject, "people", "123"), {
 		instanceOf: ProblemDetailException,
 	});
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -498,7 +498,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data"), (t) => {
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data.type"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data.type"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -522,7 +522,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data.type"), (t) =>
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data.attributes"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data.attributes"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(
@@ -541,7 +541,7 @@ test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data.attributes"), 
 		},
 	);
 });
-test(inputTitle(JsonApi.parseUpdateRequest, "Invalid type", "data.id"), (t) => {
+test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data.id"), (t) => {
 	t.throws(
 		() =>
 			JsonApi.parseUpdateRequest(

@@ -172,7 +172,7 @@ function ApiResourceSwaggerSchema<Dto extends JsonObject>(
 	};
 }
 
-const JsonApi: Required<Representation<JsonObject, JsonObject, JsonObject>> = {
+const JsonApi: Required<Representation> = {
 	contentType: "application/vnd.api+json",
 
 	getCollectionResponseSwaggerExtension<Dto extends JsonObject>(

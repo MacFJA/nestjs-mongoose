@@ -2,10 +2,12 @@ import test from "ava";
 import {
 	CommaListPipe,
 	OneToOneConverter,
+	RelativeUrl,
 	toMongoFilterQuery,
 	toMongoOperator,
 	toMongoSort,
 } from "../../src/helpers.js";
+import { flatObjectKeys } from "../../src/utils.js";
 import { inputTitle, title } from "../_helpers.js";
 
 for (const [[operator, value], expected] of [
@@ -106,7 +108,6 @@ for (const [[operator, value], expected] of [
 		["$eq", "foo"],
 	],
 ]) {
-	// test(`Unit test: ${toMongoOperator.name} ⟶ Transforming: ${operator}: ${JSON.stringify(value)}`, (t) =>
 	test(inputTitle(toMongoOperator, "Transforming", `${operator}: ${JSON.stringify(value)}`), (t) =>
 		t.deepEqual(toMongoOperator(operator, value), expected as unknown as [string, string | number | boolean | null]),
 	);
@@ -114,7 +115,7 @@ for (const [[operator, value], expected] of [
 
 test(title(toMongoFilterQuery, "Simple query"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery({
+		toMongoFilterQuery<{ foo: string }>({
 			foo: { $eq: "bar" },
 		}),
 		{
@@ -124,7 +125,7 @@ test(title(toMongoFilterQuery, "Simple query"), (t) => {
 });
 test(title(toMongoFilterQuery, "Multiple operator"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery({
+		toMongoFilterQuery<{ foo: number }>({
 			foo: { $lt: 10, $gt: 2 },
 		}),
 		{
@@ -134,7 +135,7 @@ test(title(toMongoFilterQuery, "Multiple operator"), (t) => {
 });
 test(title(toMongoFilterQuery, "$start operator"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery({
+		toMongoFilterQuery<{ foo: string }>({
 			foo: { $start: "bar" },
 		}),
 		{
@@ -144,7 +145,7 @@ test(title(toMongoFilterQuery, "$start operator"), (t) => {
 });
 test(title(toMongoFilterQuery, "$start + $end operators"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery({
+		toMongoFilterQuery<{ foo: string }>({
 			foo: { $start: "bar", $end: "hello" },
 		}),
 		{
@@ -154,7 +155,7 @@ test(title(toMongoFilterQuery, "$start + $end operators"), (t) => {
 });
 test(title(toMongoFilterQuery, "$def operator"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery({
+		toMongoFilterQuery<{ foo: string }>({
 			foo: { $def: true },
 		}),
 		{
@@ -164,7 +165,7 @@ test(title(toMongoFilterQuery, "$def operator"), (t) => {
 });
 test(title(toMongoFilterQuery, "$def + $neq operators"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery<{ foo: unknown }>({
+		toMongoFilterQuery<{ foo: string }>({
 			foo: { $def: true, $neq: "bar" },
 		}),
 		{
@@ -174,7 +175,7 @@ test(title(toMongoFilterQuery, "$def + $neq operators"), (t) => {
 });
 test(title(toMongoFilterQuery, "$def + $neq + $nin operators"), (t) => {
 	t.deepEqual(
-		toMongoFilterQuery({
+		toMongoFilterQuery<{ foo: string }>({
 			foo: { $def: true, $neq: "bar", $nin: ["hello", "world"] },
 		}),
 		{
@@ -210,7 +211,7 @@ for (const [input, expected] of [
 	});
 }
 
-const oneToOne = new OneToOneConverter();
+const oneToOne = new OneToOneConverter<{ foo: string; bar: string }>();
 test(title(OneToOneConverter, "fromCreator"), (t) => t.deepEqual(oneToOne.fromCreator({ foo: "bar" }), { foo: "bar" }));
 test(title(OneToOneConverter, "fromUpdater"), (t) =>
 	t.deepEqual(oneToOne.fromUpdater("123", { foo: "bar" }), {
@@ -255,3 +256,22 @@ for (const [input, expected] of [
 test(title(CommaListPipe, "Transforming undefined"), (t) =>
 	t.deepEqual(new CommaListPipe().transform(undefined), undefined),
 );
+
+test(title(flatObjectKeys, "without parent"), (t) => {
+	t.deepEqual(flatObjectKeys({ foo: { bar: "hello" }, baz: "world" }), ["foo.bar", "baz"]);
+});
+
+test(title(flatObjectKeys, "with parent"), (t) => {
+	t.deepEqual(flatObjectKeys({ foo: { bar: "hello" }, baz: "world" }, true), ["foo", "foo.bar", "baz"]);
+});
+
+test(title(RelativeUrl, RelativeUrl.prototype.removeParam.name), (t) => {
+	const url = RelativeUrl.from("/hello?value=world&foo=bar");
+	url.removeParam("foo");
+	t.is(url.toString(), "/hello?value=world");
+});
+test(title(RelativeUrl, RelativeUrl.prototype.onlyKeepParams.name), (t) => {
+	const url = RelativeUrl.from("/hello?value=world&foo=bar");
+	url.onlyKeepParams(["foo"]);
+	t.is(url.toString(), "/hello?foo=bar");
+});

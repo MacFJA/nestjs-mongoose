@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.4.0 - 2024-06-05
+
+### Added
+
+- Filter can now match nested document (dot notation)
+- List of projection (field to display) can now be configured and nested (dot notation)
+- List of sortable field can now be configured and nested (dot notation)
+- More JSDoc/TSDoc documentation
+
+### Changed
+
+- Remove Searchable type
+- Improve List filter handling
+- move `operators` and `operatorValidator` factory options into a dedicate option node (`filter`)
+
+### Fixed
+
+- Remove forgotten `console.log`
+
 ## 0.3.0 - 2024-05-20
 
 ### Added

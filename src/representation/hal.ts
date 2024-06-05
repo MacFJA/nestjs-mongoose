@@ -1,8 +1,8 @@
 import { ApiProperty, getSchemaPath } from "@nestjs/swagger";
-import type { Object as JsonObject } from "json-typescript";
 import { removeUndefined } from "../utils.js";
 import { type Representation, getPaginationLinks } from "./index.js";
 
+/* c8 ignore start */
 class HalLink {
 	@ApiProperty({ type: String, required: true })
 	href = "";
@@ -46,11 +46,12 @@ class HalCollectionResponse {
 	type = "";
 	@ApiProperty({ type: Number, description: "Number of element returned for the current page" })
 	count = 0;
-	@ApiProperty({ type: Number, description: "Total number of element matching" })
+	@ApiProperty({ type: Number, description: "Total number of matching element" })
 	total = 0;
 }
+/* c8 ignore end */
 
-const Hal: Representation<JsonObject, JsonObject, JsonObject> = {
+const Hal: Representation = {
 	contentType: "application/hal+json",
 	getCollectionResponseSwaggerExtension: (attribute, resourceType) => {
 		return {

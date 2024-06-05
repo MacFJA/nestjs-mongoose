@@ -94,3 +94,20 @@ export function wrap<source extends (...args: any) => any>(
 		return after ? after(returned, newArgs) : returned;
 	};
 }
+
+export function flatObjectKeys(input: object, withParent = false): Array<string> {
+	return Object.entries(input).flatMap(([key, value]) => {
+		if (["string", "number", "boolean"].includes(typeof value) || value === null || Array.isArray(value)) {
+			return [key];
+		}
+		const children = flatObjectKeys(value, withParent).map((child) => `${key}.${child}`);
+		return withParent ? [key, ...children] : children;
+	});
+}
+
+export function addExcludeArray<T>(base: Array<unknown>, add: Array<unknown>, exclude: Array<unknown>): Array<T> {
+	return [...base, ...add].filter((item) => !exclude.includes(item)) as Array<T>;
+}
+export function filterArray<T>(base: Array<unknown>, allowed: Array<unknown>): Array<T> {
+	return base.filter((item) => allowed.includes(item)) as Array<T>;
+}

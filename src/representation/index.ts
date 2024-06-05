@@ -7,39 +7,58 @@ import { RelativeUrl } from "../helpers.js";
 
 /**
  * Render one document
+ *
+ * @param id the MongoDB id of the document
+ * @param type the value of `resourceType` (or the value of `modelInjectionName`)
+ * @param self the URL pathname of the controller
+ * @param resource the DTO version of the MongoDB document
+ * @return A JSON compatible representation of the document
  */
 export type RenderOne<Resource extends JsonObject> = (
 	id: string,
 	type: string,
 	self: string,
-	resource: Resource,
+	resource: Partial<Resource>,
 ) => JsonObject;
 /**
  * Render a paginated list of documents
+ *
+ * @param type the value of `resourceType` (or the value of `modelInjectionName`)
+ * @param self the URL pathname of the controller
+ * @param pageData the current information about the page (the size of a page, and the current page number)
+ * @param resources list of item of the page. The key of the map is the MongoDB id of the document, the value the DTO version
+ * @return A JSON compatible representation of the document collection
  */
 export type RenderPage<Resource extends JsonObject> = (
 	type: string,
 	self: string,
 	count: number,
 	pageData: { size: number; current: number },
-	resources: Map<string, Resource>,
+	resources: Map<string, Partial<Resource>>,
 ) => JsonObject;
 /**
  * Extract the `Creator` resource from the creation request body
+ *
+ * @param input the JSON receive by the controller
+ * @param type the value of `resourceType` (or the value of `modelInjectionName`)
  */
 export type ParseCreate<Creator extends JsonObject> = (input: JsonObject, type: string) => Creator | never;
 /**
  * Extract the `Updater` resource from the modification request body
+ *
+ * @param input the JSON receive by the controller
+ * @param type the value of `resourceType` (or the value of `modelInjectionName`)
+ * @param id the identifier of the document to update
  */
 export type ParseUpdate<Updater extends JsonObject> = (input: JsonObject, type: string, id: string) => Updater | never;
 
 type SwaggerExtensionMaker<Input extends JsonObject = JsonObject> = (
 	/**
-	 * the class of a DTO
+	 * The class of a DTO
 	 */
 	attribute: Type<Input>,
 	/**
-	 * the value of `resourceType` (of the configuration), or the value of `modelInjectionName`
+	 * The value of `resourceType` (of the configuration), or the value of `modelInjectionName`
 	 */
 	resourceType: string,
 ) => SwaggerSchemaExtension;
@@ -75,7 +94,7 @@ export type Representation<
 	 */
 	readonly renderOne?: RenderOne<Dto>;
 	/**
-	 * This function is call to render a paginated list of document
+	 * This function is call to render a paginated list of documents
 	 */
 	readonly renderPage?: RenderPage<Dto>;
 	/**
@@ -103,7 +122,7 @@ export type Representation<
 	 */
 	readonly parseUpdateRequest?: ParseUpdate<Updater>;
 	/**
-	 * Indicate the output MIME type of your representation, it is also use (with the `Accept` header) to determine which representation to use.
+	 * Indicate the output MIME type of your representation, it is also use (with the `Accept` header, or `Content-type` header) to determine which representation to use.
 	 */
 	readonly contentType: string;
 };
@@ -245,7 +264,7 @@ export function validateContentType<R extends Representation = Representation>(
 			detail: `The provided Accept header ("${finalContentType}") is not in the list of possible response`,
 		});
 	}
-	return contentType as string;
+	return finalContentType;
 }
 
 export function getPaginationLinks(

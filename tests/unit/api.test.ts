@@ -1,5 +1,5 @@
 import test from "ava";
-import { ListOperator, LogicalOperator, ValueOperator, filtersValidator } from "../../src/api.js";
+import { FilterParserAction, ListOperator, LogicalOperator, ValueOperator, filtersValidator } from "../../src/api.js";
 import { title } from "../_helpers.js";
 
 test(title(filtersValidator, "All valid"), (t) => {
@@ -10,8 +10,8 @@ test(title(filtersValidator, "All valid"), (t) => {
 				baz: { $start: "foobar" },
 			},
 			[LogicalOperator.AND, ValueOperator.EQUALS, ValueOperator.NOT_EQUALS, ValueOperator.START_WITH],
-			false,
-			true,
+			["foo", "hello", "baz"],
+			FilterParserAction.THROW,
 		),
 		{
 			$and: [{ foo: { $eq: "bar" } }, { hello: { $neq: "world" } }],
@@ -20,20 +20,18 @@ test(title(filtersValidator, "All valid"), (t) => {
 	);
 });
 
-test(title(filtersValidator, "No logical operator: escape"), (t) => {
+test(title(filtersValidator, "Logical operator + invalid value operator: remove"), (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown; hello: unknown; baz: unknown }>(
 			{
 				[LogicalOperator.AND]: [{ foo: { $eq: "bar" } }, { hello: { $neq: "world" } }],
-				baz: { $start: "foobar" },
 			},
-			[ValueOperator.EQUALS, ValueOperator.NOT_EQUALS, ValueOperator.START_WITH],
-			false,
-			true,
+			[ValueOperator.EQUALS, LogicalOperator.AND],
+			["foo", "hello", "baz"],
+			FilterParserAction.REMOVE,
 		),
 		{
-			"\\$and": [{ foo: { $eq: "bar" } }, { hello: { $neq: "world" } }],
-			baz: { $start: "foobar" },
+			[LogicalOperator.AND]: [{ foo: { $eq: "bar" } }, { hello: {} }],
 		},
 	);
 });
@@ -46,8 +44,8 @@ test(title(filtersValidator, "No logical operator: remove"), (t) => {
 				baz: { $start: "foobar" },
 			},
 			[ValueOperator.EQUALS, ValueOperator.NOT_EQUALS, ValueOperator.START_WITH],
-			false,
-			false,
+			["foo", "hello", "baz"],
+			FilterParserAction.REMOVE,
 		),
 		{
 			baz: { $start: "foobar" },
@@ -63,8 +61,8 @@ test(title(filtersValidator, "No logical operator: throw"), (t) => {
 				baz: { $start: "foobar" },
 			},
 			[ValueOperator.EQUALS, ValueOperator.NOT_EQUALS, ValueOperator.START_WITH],
-			true,
-			false,
+			["foo", "hello", "baz"],
+			FilterParserAction.THROW,
 		),
 	);
 });
@@ -75,8 +73,8 @@ test(title(filtersValidator, "List operator: primitive to array"), (t) => {
 				foo: { $in: "foobar" as unknown as Array<string> },
 			},
 			[ListOperator.IN],
-			true,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 		{
 			foo: { $in: ["foobar"] },
@@ -90,8 +88,8 @@ test(title(filtersValidator, "List operator: valid"), (t) => {
 				foo: { $in: ["foobar"] },
 			},
 			[ListOperator.IN],
-			true,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 		{
 			foo: { $in: ["foobar"] },
@@ -105,8 +103,8 @@ test(title(filtersValidator, "List operator: invalid, removed"), (t) => {
 				foo: { $in: { hello: "world" } as unknown as Array<string> },
 			},
 			[ListOperator.IN],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.REMOVE,
 		),
 		{
 			foo: {},
@@ -120,8 +118,8 @@ test(title(filtersValidator, "Value operator: invalid, throw"), (t) => {
 				foo: { $eq: { hello: "world" } as unknown as string },
 			},
 			[ValueOperator.EQUALS],
-			true,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 	);
 });
@@ -132,8 +130,8 @@ test(title(filtersValidator, "Value operator: invalid, removed"), (t) => {
 				foo: { $eq: { hello: "world" } as unknown as string },
 			},
 			[ValueOperator.EQUALS],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.REMOVE,
 		),
 		{
 			foo: {},
@@ -147,8 +145,8 @@ test(title(filtersValidator, "List operator: invalid, throw"), (t) => {
 				foo: { $in: { hello: "world" } as unknown as Array<string> },
 			},
 			[ListOperator.IN],
-			true,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 	);
 });
@@ -159,8 +157,8 @@ test(title(filtersValidator, "Invalid operator: removed"), (t) => {
 				foo: { $eq: "bar" },
 			},
 			[],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.REMOVE,
 		),
 		{
 			foo: {},
@@ -174,8 +172,8 @@ test(title(filtersValidator, "Invalid operator: throw"), (t) => {
 				foo: { $eq: "bar" },
 			},
 			[],
-			true,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 	);
 });
@@ -186,8 +184,8 @@ test(title(filtersValidator, "Primitive: null"), (t) => {
 				foo: { $eq: null },
 			},
 			[ValueOperator.EQUALS],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 		{
 			foo: { $eq: null },
@@ -201,8 +199,8 @@ test(title(filtersValidator, "Primitive: string"), (t) => {
 				foo: { $eq: "bar" },
 			},
 			[ValueOperator.EQUALS],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 		{
 			foo: { $eq: "bar" },
@@ -216,8 +214,8 @@ test(title(filtersValidator, "Primitive: number"), (t) => {
 				foo: { $eq: 10 },
 			},
 			[ValueOperator.EQUALS],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 		{
 			foo: { $eq: 10 },
@@ -231,11 +229,109 @@ test(title(filtersValidator, "Primitive: boolean"), (t) => {
 				foo: { $eq: false },
 			},
 			[ValueOperator.EQUALS],
-			false,
-			false,
+			["foo"],
+			FilterParserAction.THROW,
 		),
 		{
 			foo: { $eq: false },
+		},
+	);
+});
+test(title(filtersValidator, "Invalid field: removed"), (t) => {
+	t.deepEqual(
+		filtersValidator<{ foo: unknown; bar: unknown }>(
+			{
+				foo: { $eq: false },
+				bar: { $eq: true },
+			},
+			[ValueOperator.EQUALS],
+			["foo"],
+			FilterParserAction.REMOVE,
+		),
+		{
+			foo: { $eq: false },
+		},
+	);
+});
+test(title(filtersValidator, "Invalid field: throw"), (t) => {
+	t.throws(() =>
+		filtersValidator<{ foo: unknown; bar: unknown }>(
+			{
+				foo: { $eq: "bar" },
+				bar: { $eq: true },
+			},
+			[],
+			["foo"],
+			FilterParserAction.THROW,
+		),
+	);
+});
+
+test(title(filtersValidator, "Invalid field: do nothing"), (t) => {
+	t.deepEqual(
+		filtersValidator<{ foo: unknown; bar: unknown }>(
+			{
+				foo: { $eq: false },
+				bar: { $eq: true },
+			},
+			[ValueOperator.EQUALS],
+			["foo"],
+			FilterParserAction.DO_NOTHING,
+		),
+		{
+			foo: { $eq: false },
+			bar: { $eq: true },
+		},
+	);
+});
+test(title(filtersValidator, "undefined input"), (t) => {
+	t.is(
+		filtersValidator<{ foo: unknown; bar: unknown }>(
+			undefined,
+			[ValueOperator.EQUALS],
+			["foo"],
+			FilterParserAction.DO_NOTHING,
+		),
+		undefined,
+	);
+});
+
+test(title(filtersValidator, "Empty logical operator 1"), (t) => {
+	t.deepEqual(
+		filtersValidator<{ foo: unknown }>(
+			{ $or: undefined },
+			[ValueOperator.EQUALS, LogicalOperator.OR],
+			["foo"],
+			FilterParserAction.THROW,
+		),
+		{
+			$or: undefined,
+		},
+	);
+});
+test(title(filtersValidator, "Empty logical operator 2"), (t) => {
+	t.deepEqual(
+		filtersValidator<{ foo: unknown }>(
+			{ $or: [] },
+			[ValueOperator.EQUALS, LogicalOperator.OR],
+			["foo"],
+			FilterParserAction.THROW,
+		),
+		{
+			$or: [],
+		},
+	);
+});
+test(title(filtersValidator, "Empty logical operator 3"), (t) => {
+	t.deepEqual(
+		filtersValidator<{ foo: unknown }>(
+			{ $or: [{}] },
+			[ValueOperator.EQUALS, LogicalOperator.OR],
+			["foo"],
+			FilterParserAction.THROW,
+		),
+		{
+			$or: [{}],
 		},
 	);
 });

@@ -45,6 +45,9 @@ export default [
 					hook: "buildStart",
 				}),
 		],
+		watch: {
+			include: "./src/**",
+		},
 	},
 	{
 		input: "./dist/dts/src/index.d.ts",
@@ -57,5 +60,8 @@ export default [
 					hook: "buildEnd",
 				}),
 		],
+		watch: {
+			include: "./dist/dts/**",
+		},
 	},
 ];
