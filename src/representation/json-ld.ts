@@ -5,6 +5,7 @@ import { RelativeUrl } from "../helpers.js";
 import { removeUndefined } from "../utils.js";
 import { type Representation, type SwaggerSchemaExtension, getPaginationLinks } from "./index.js";
 
+/* c8 ignore start */
 class JsonLdSimpleResponse {
 	@ApiProperty({ name: "@context", properties: { "@vocab": { type: "string" } } })
 	context = {};
@@ -54,6 +55,8 @@ class JsonLdResource {
 	@ApiProperty({ name: "@type", type: String })
 	type = "";
 }
+/* c8 ignore end */
+
 function getResourceSwaggerSchema<Dto extends JsonObject>(
 	attribute: Type<Dto>,
 	resourceType: string,
@@ -74,7 +77,15 @@ function getResourceSwaggerSchema<Dto extends JsonObject>(
 	};
 }
 
-export function JsonLdFactory(context: string): Representation {
+export function JsonLdFactory(
+	context: string,
+): Representation &
+	Required<
+		Pick<
+			Representation,
+			"renderOne" | "renderPage" | "getOneResponseSwaggerExtension" | "getCollectionResponseSwaggerExtension"
+		>
+	> {
 	function toEntity<Dto extends JsonObject>(id: string, type: string, resource: Dto): JsonObject {
 		return {
 			"@id": id,
@@ -112,7 +123,7 @@ export function JsonLdFactory(context: string): Representation {
 				"@id": first,
 				"@type": "hydra:Collection",
 				"hydra:totalItems": count,
-				"hydra:member": Object.entries(resources).map(([id, resource]) => toEntity(id, type, resource)),
+				"hydra:member": Array.from(resources.entries()).map(([id, resource]) => toEntity(id, type, resource)),
 				"hydra:view": removeUndefined({
 					"@id": url,
 					"@type": "hydra:PartialCollectionView",

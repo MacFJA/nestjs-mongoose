@@ -16,6 +16,7 @@ import {
 } from "@nestjs/swagger";
 import type { Object as JsonObject } from "json-typescript";
 import { ListOperator, LogicalOperator, Operators, ValueOperator, getDotKeys } from "./api.js";
+import type { AddExcludeField } from "./index.js";
 import { type Representation, getSwaggerExtension } from "./representation/index.js";
 import { addExcludeArray, regexEscaper, removeUndefined } from "./utils.js";
 
@@ -40,7 +41,10 @@ export function DeleteOneDecorator(): MethodDecorator {
 		ApiNoContentResponse({
 			description: "The document have been successfully deleted",
 		}),
-		ApiBadRequestResponse({ description: "If the provided `id` is invalid" }),
+		ApiBadRequestResponse({
+			...ProblemDetailResponseOptions,
+			description: "If the provided `id` is invalid",
+		}),
 		HttpCode(204),
 		ApiNotFoundResponse({
 			...ProblemDetailResponseOptions,
@@ -59,13 +63,14 @@ export function GetOneDecorator<Dto extends JsonObject>(
 	dtoConstructor: Type<Dto> | undefined,
 	resourceType: string,
 	representations: Array<Representation>,
+	projectionFields: AddExcludeField = { add: [], exclude: [] },
 ): MethodDecorator {
 	if (dtoConstructor === undefined) return () => {};
 	return applyDecorators(
 		Get("/:id"),
 		ApiOperation({
 			summary: "Get one element",
-			description: "Get one element by its identifier",
+			description: "Get one element by its identifier.",
 		}),
 		ApiParam({
 			name: "id",
@@ -79,7 +84,7 @@ export function GetOneDecorator<Dto extends JsonObject>(
 			...ProblemDetailResponseOptions,
 			description: "If the document does not exists (the identifier is linked to no document)",
 		}),
-		FieldsQuerySwagger(dtoConstructor),
+		FieldsQuerySwagger(dtoConstructor, projectionFields),
 		OneModelResponseSwagger(dtoConstructor, resourceType, ApiOkResponse, "The requested element", representations),
 	);
 }
@@ -146,6 +151,7 @@ export function UpdateOneDecorator<Updater extends JsonObject, Dto extends JsonO
 	updaterConstructor: Type<Updater> | undefined,
 	resourceType: string,
 	representations: Array<Representation>,
+	projectionFields: AddExcludeField = { add: [], exclude: [] },
 ): MethodDecorator {
 	if (updaterConstructor === undefined) return () => {};
 
@@ -162,7 +168,7 @@ export function UpdateOneDecorator<Updater extends JsonObject, Dto extends JsonO
 		ApiOperation({
 			summary: "Update one element",
 			description:
-				"Update one element by its identifier.  \nThe modification is partial, so all fields in `data.attributes` are optional",
+				"Update one element by its identifier.  \nThe modification is partial, so all fields in `data.attributes` are optional.",
 			requestBody: {
 				description: "The modification is partial, so all fields of the resource are optional",
 				content: responses,
@@ -177,10 +183,9 @@ export function UpdateOneDecorator<Updater extends JsonObject, Dto extends JsonO
 		}),
 		ApiParam({
 			name: "id",
-			description: "The unique identifier of the element to get",
+			description: "The unique identifier of the element to update",
 		}),
-
-		FieldsQuerySwagger(dtoConstructor),
+		FieldsQuerySwagger(dtoConstructor, projectionFields),
 		ApiNotFoundResponse({
 			...ProblemDetailResponseOptions,
 			description: "If the document does not exists (the identifier is linked to no document)",
@@ -219,8 +224,9 @@ export function GetListDecorator<Dto extends JsonObject>(
 	representations: Array<Representation>,
 	maxPageLimit: number,
 	operators: Readonly<Array<(typeof Operators)[number]>> = Operators,
-	addFields: Array<string> = [],
-	excludeFields: Array<string> = [],
+	filterFields: AddExcludeField = { add: [], exclude: [] },
+	sortFields: AddExcludeField = { add: [], exclude: [] },
+	projectionFields: AddExcludeField = { add: [], exclude: [] },
 ): MethodDecorator {
 	if (dtoConstructor === undefined) return () => {};
 	const { models, responses } = getSwaggerExtension(
@@ -234,6 +240,7 @@ export function GetListDecorator<Dto extends JsonObject>(
 		let description = "";
 		const descriptions = {
 			values: [
+				/* c8 ignore start */
 				operators.includes(ValueOperator.EQUALS) && "`$eq`: Equals to",
 				operators.includes(ValueOperator.NOT_EQUALS) && "`$neq`: Not equals to",
 				operators.includes(ValueOperator.GREATER_THAN) && "`$gt`: Greater than",
@@ -245,31 +252,43 @@ export function GetListDecorator<Dto extends JsonObject>(
 				operators.includes(ValueOperator.REGEX) && "`$regex`: Match the regular expression",
 				operators.includes(ValueOperator.IS_NULL) && "`$null`: Equal to null",
 				operators.includes(ValueOperator.IS_DEFINED) && "`$def`: Is defined (<=> not null)",
+				/* c8 ignore end */
 			].filter(Boolean) as Array<string>,
 			list: [
+				/* c8 ignore start */
 				operators.includes(ListOperator.IN) && "`$in`: In the list",
 				operators.includes(ListOperator.NOT_IN) && "`$nin`: Not in the list",
+				/* c8 ignore end */
 			].filter(Boolean) as Array<string>,
 			logical: [
+				/* c8 ignore start */
 				operators.includes(LogicalOperator.AND) && "`$and`: Must validate all expression",
-				operators.includes(LogicalOperator.OR) && "`$or`: Must value at least one expression",
+				operators.includes(LogicalOperator.OR) && "`$or`: Must validate at least one expression",
+				/* c8 ignore end */
 			].filter(Boolean) as Array<string>,
-			fields: addExcludeArray(getDotKeys(dtoConstructor), addFields, excludeFields).map((v) => `\`${v}\``),
+			fields: addExcludeArray(getDotKeys(dtoConstructor), filterFields.add, filterFields.exclude).map(
+				(v) => `\`${v}\``,
+			),
 		};
 		if (descriptions.values.length > 0) {
 			description += "\n### Values operators:\n";
+			description += "Operators to use on a field for a single value\n";
 			description += `- ${descriptions.values.join("\n- ")}`;
 		}
 		if (descriptions.list.length > 0) {
 			description += "\n### List operators:\n";
+			description += "Operators to use on a field for a list value\n";
 			description += `- ${descriptions.list.join("\n- ")}`;
 		}
 		if (descriptions.logical.length > 0) {
 			description += "\n### Logical operators:\n";
+			description += "Operators to use on a list expression\n";
+			description += "Can only be use at the root of the filter\n";
 			description += `- ${descriptions.logical.join("\n- ")}`;
 		}
 		if (descriptions.fields.length > 0) {
 			description += "\n### Fields:\n";
+			description += "Available fields to use\n";
 			description += `- ${descriptions.fields.join("\n- ")}`;
 		}
 
@@ -317,21 +336,24 @@ export function GetListDecorator<Dto extends JsonObject>(
 		Get("/"),
 		ApiOperation({
 			summary: "Get a pagination of the data collection",
-			description: "Get a paginated portion (page number base pagination) of the data collection.",
+			description: "Get a paginated portion (page number based pagination) of the data collection.",
 		}),
-		FieldsQuerySwagger(dtoConstructor),
+		FieldsQuerySwagger(dtoConstructor, projectionFields),
 		ApiQuery({
 			name: "sort",
 			isArray: true,
 			required: false,
-			style: "simple",
+			// style: "simple",
 			description:
 				"The ordering of the collection result.  \n" +
 				'The value is a comma-separated (`U+002C COMMA`, "`,`") list.  \n' +
 				'If the name is prefixed by a "`-`", the order will be desc.',
-			enum: getDotKeys(dtoConstructor),
+			enum: addExcludeArray(getDotKeys(dtoConstructor), sortFields.add, sortFields.exclude).flatMap((field) => [
+				String(field),
+				`-${String(field)}`,
+			]),
 		}),
-		ApiExtraModels(...models),
+		ApiExtraModels(...models, ListFilters),
 		ApiQuery({
 			name: "filters",
 			style: "deepObject",
@@ -347,14 +369,12 @@ export function GetListDecorator<Dto extends JsonObject>(
 								type: "array",
 								items: {
 									type: "object",
-									patternProperties: {
-										".*": MongoFilterSchema(),
-									},
+									patternProperties: { ".*": { $ref: getSchemaPath(ListFilters) } },
 								},
 							},
 						]),
 					),
-					"^[^$].*$": MongoFilterSchema(),
+					"^[^$].*$": { $ref: getSchemaPath(ListFilters) },
 				},
 			},
 			description: buildOperatorsDescription(),
@@ -401,9 +421,13 @@ export function GetListDecorator<Dto extends JsonObject>(
 			content: responses,
 			description: "The paginated list of element",
 		}),
+		ApiBadRequestResponse({
+			...ProblemDetailResponseOptions,
+			description: "If the provided information are invalid/malformed",
+		}),
 	);
 }
-function FieldsQuerySwagger<Dto extends JsonObject>(dataDto: Type<Dto> | undefined) {
+function FieldsQuerySwagger<Dto extends JsonObject>(dataDto: Type<Dto> | undefined, fields: AddExcludeField) {
 	if (dataDto === undefined) return () => {};
 	return ApiQuery({
 		description:
@@ -412,9 +436,9 @@ function FieldsQuerySwagger<Dto extends JsonObject>(dataDto: Type<Dto> | undefin
 			"No or missing value will display all available fields.",
 		name: "fields",
 		isArray: true,
-		style: "simple",
+		// style: "simple",
 		required: false,
-		enum: getDotKeys(dataDto),
+		enum: addExcludeArray(getDotKeys(dataDto), fields.add, fields.exclude),
 	});
 }
 function OneModelResponseSwagger<Dto extends JsonObject>(
@@ -441,6 +465,7 @@ function OneModelResponseSwagger<Dto extends JsonObject>(
 		}),
 	);
 }
+/* c8 ignore start */
 export class ProblemDetailResponse {
 	@ApiProperty({
 		type: Number,
@@ -470,6 +495,7 @@ export class ProblemDetailResponse {
 	})
 	instance = "/url";
 }
+/* c8 ignore end */
 const ProblemDetailResponseOptions = {
 	content: {
 		"application/problem+json": {
@@ -477,15 +503,33 @@ const ProblemDetailResponseOptions = {
 		},
 	},
 };
-function MongoFilterSchema(): object {
-	return {
-		type: "object",
-		properties: Operators.map((name) => ({
-			[name]: {
-				type: {
-					anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
-				},
-			},
-		})),
-	};
+
+export class ListFilters {
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$def" })
+	def?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$end" })
+	end?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$eq" })
+	eq?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$gt" })
+	gt?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$gte" })
+	gte?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$lt" })
+	lt?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$lte" })
+	lte?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$neq" })
+	neq?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$null" })
+	null?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$regex" })
+	regex?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: false, required: false, name: "$start" })
+	start?: string | number;
+
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: true, required: false, name: "$in" })
+	in?: string | number;
+	@ApiProperty({ oneOf: [{ type: "string" }, { type: "number" }], isArray: true, required: false, name: "$nin" })
+	nin?: string | number;
 }

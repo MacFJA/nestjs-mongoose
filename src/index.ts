@@ -116,6 +116,18 @@ export interface MongooseController<Dto extends JsonObject, Creator extends Json
 	deleteOne?(id: string): Promise<undefined | never>;
 }
 
+export type AddExcludeField = {
+	/**
+	 * List of field to remove
+	 * (default: `[]`)
+	 */
+	exclude: Array<string>;
+	/**
+	 * List of field to add
+	 * (default: `[]`)
+	 */
+	add: Array<string>;
+};
 export type MongooseControllerOptions<
 	Dto extends JsonObject,
 	Creator extends JsonObject,
@@ -200,31 +212,16 @@ export type MongooseControllerOptions<
 		/**
 		 * Filter fields options
 		 */
-		fields: Partial<{
-			/**
-			 * List of field to remove
-			 * (default: `[]`)
-			 */
-			exclude: Array<string>;
-			/**
-			 * List of field to add
-			 * (default: `[]`)
-			 */
-			add: Array<string>;
-		}>;
+		fields: Partial<AddExcludeField>;
 	}>;
-	sort: Partial<{
-		/**
-		 * List of field to remove
-		 * (default: `[]`)
-		 */
-		exclude: Array<string>;
-		/**
-		 * List of field to add
-		 * (default: `[]`)
-		 */
-		add: Array<string>;
-	}>;
+	/**
+	 * Sort fields options
+	 */
+	sort: Partial<AddExcludeField>;
+	/**
+	 * Projection (display) fields options
+	 */
+	projection: Partial<AddExcludeField>;
 }>;
 
 /**
@@ -271,15 +268,10 @@ export function MongooseControllerFactory<
 		filter: {
 			operators: typeof Operators;
 			actionOnInvalid: FilterParserAction;
-			fields: {
-				exclude: Array<string>;
-				add: Array<string>;
-			};
+			fields: AddExcludeField;
 		};
-		sort: {
-			exclude: Array<string>;
-			add: Array<string>;
-		};
+		sort: AddExcludeField;
+		projection: AddExcludeField;
 	}> = {
 		disable: {
 			list: false,
@@ -315,6 +307,10 @@ export function MongooseControllerFactory<
 			add: options?.sort?.add ?? [],
 			exclude: options?.sort?.exclude ?? [],
 		},
+		projection: {
+			add: options?.projection?.add ?? [],
+			exclude: options?.projection?.exclude ?? [],
+		},
 	};
 	if (dtoConstructor === undefined) {
 		conf.disable.read = true;
@@ -347,8 +343,9 @@ export function MongooseControllerFactory<
 			conf.representations,
 			conf.pageSize.max,
 			conf.filter.operators,
-			conf.filter.fields.add,
-			conf.filter.fields.exclude,
+			conf.filter.fields,
+			conf.sort,
+			conf.projection,
 		)
 		async getList(
 			@Res({ passthrough: true }) response: Response,
@@ -403,7 +400,7 @@ export function MongooseControllerFactory<
 			);
 		}
 
-		@GetOneDecorator(dtoConstructor, conf.resourceType, conf.representations)
+		@GetOneDecorator(dtoConstructor, conf.resourceType, conf.representations, conf.projection)
 		async getOne(
 			@Res({ passthrough: true }) response: Response,
 			@Req() request: Request,
@@ -470,7 +467,7 @@ export function MongooseControllerFactory<
 			}
 		}
 
-		@UpdateOneDecorator(dtoConstructor, updaterConstructor, conf.resourceType, conf.representations)
+		@UpdateOneDecorator(dtoConstructor, updaterConstructor, conf.resourceType, conf.representations, conf.projection)
 		async updateOne(
 			@Res({ passthrough: true }) response: Response,
 			@Req() request: Request,
@@ -633,13 +630,13 @@ function handleMongoServerError(error: Error | unknown, entityName: string): nev
 }
 
 export {
-	SearchField,
+	type SearchField,
 	Operators,
 	ValueOperator,
 	LogicalOperator,
 	ListOperator,
-	DotKeys,
-	FlattenObject,
+	type DotKeys,
+	type FlattenObject,
 	FilterParserAction,
 } from "./api.js";
 export {

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.5.0 - 2024-06-16
+
+### Added
+
+- Add options to change fields to use in projection
+- More description in Swagger
+- Add information about the version of the generated OpenApi documentation
+
+### Fixed
+
+- Missing definition for some Error in Swagger
+- Some typo in documentation
+- Fix Swagger for sort (missing `-` prefix variant)
+- Fix Collection renderer of JSON-LD
+
 ## 0.4.0 - 2024-06-05
 
 ### Added

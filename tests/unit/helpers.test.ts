@@ -1,4 +1,3 @@
-import test from "ava";
 import {
 	CommaListPipe,
 	OneToOneConverter,
@@ -8,7 +7,7 @@ import {
 	toMongoSort,
 } from "../../src/helpers.js";
 import { flatObjectKeys } from "../../src/utils.js";
-import { inputTitle, title } from "../_helpers.js";
+import { testClass, testFunction, testFunctionTestCase } from "../_helpers.js";
 
 for (const [[operator, value], expected] of [
 	[
@@ -108,12 +107,12 @@ for (const [[operator, value], expected] of [
 		["$eq", "foo"],
 	],
 ]) {
-	test(inputTitle(toMongoOperator, "Transforming", `${operator}: ${JSON.stringify(value)}`), (t) =>
+	testFunction(toMongoOperator, testFunctionTestCase({ operator, value: value }, JSON.stringify(expected)), (t) =>
 		t.deepEqual(toMongoOperator(operator, value), expected as unknown as [string, string | number | boolean | null]),
 	);
 }
 
-test(title(toMongoFilterQuery, "Simple query"), (t) => {
+testFunction(toMongoFilterQuery, "Simple query", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: string }>({
 			foo: { $eq: "bar" },
@@ -123,7 +122,7 @@ test(title(toMongoFilterQuery, "Simple query"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "Multiple operator"), (t) => {
+testFunction(toMongoFilterQuery, "Multiple operator", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: number }>({
 			foo: { $lt: 10, $gt: 2 },
@@ -133,7 +132,7 @@ test(title(toMongoFilterQuery, "Multiple operator"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "$start operator"), (t) => {
+testFunction(toMongoFilterQuery, "$start operator", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: string }>({
 			foo: { $start: "bar" },
@@ -143,7 +142,7 @@ test(title(toMongoFilterQuery, "$start operator"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "$start + $end operators"), (t) => {
+testFunction(toMongoFilterQuery, "$start + $end operators", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: string }>({
 			foo: { $start: "bar", $end: "hello" },
@@ -153,7 +152,7 @@ test(title(toMongoFilterQuery, "$start + $end operators"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "$def operator"), (t) => {
+testFunction(toMongoFilterQuery, "$def operator", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: string }>({
 			foo: { $def: true },
@@ -163,7 +162,7 @@ test(title(toMongoFilterQuery, "$def operator"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "$def + $neq operators"), (t) => {
+testFunction(toMongoFilterQuery, "$def + $neq operators", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: string }>({
 			foo: { $def: true, $neq: "bar" },
@@ -173,7 +172,7 @@ test(title(toMongoFilterQuery, "$def + $neq operators"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "$def + $neq + $nin operators"), (t) => {
+testFunction(toMongoFilterQuery, "$def + $neq + $nin operators", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: string }>({
 			foo: { $def: true, $neq: "bar", $nin: ["hello", "world"] },
@@ -183,7 +182,7 @@ test(title(toMongoFilterQuery, "$def + $neq + $nin operators"), (t) => {
 		},
 	);
 });
-test(title(toMongoFilterQuery, "$or operator"), (t) => {
+testFunction(toMongoFilterQuery, "$or operator", (t) => {
 	t.deepEqual(
 		toMongoFilterQuery<{ foo: unknown; bar: unknown }>({
 			$or: [{ foo: { $eq: "bar" } }, { bar: { $neq: "foo" } }],
@@ -194,7 +193,7 @@ test(title(toMongoFilterQuery, "$or operator"), (t) => {
 	);
 });
 
-test(title(toMongoFilterQuery, "empty / undefined query"), (t) => {
+testFunction(toMongoFilterQuery, "empty / undefined query", (t) => {
 	t.deepEqual(toMongoFilterQuery({}), {});
 	t.deepEqual(toMongoFilterQuery(undefined), {});
 });
@@ -205,36 +204,54 @@ for (const [input, expected] of [
 	["name,-age", { name: 1, age: -1 }],
 	["-age,name", { age: -1, name: 1 }],
 ] as Array<[string, Record<string, -1 | 1>]>) {
-	test(inputTitle(toMongoSort, "Transforming", input), (t) => {
+	testFunction(toMongoSort, input, (t) => {
 		const actual = toMongoSort(input.split(","));
 		t.deepEqual(actual, expected);
 	});
 }
 
 const oneToOne = new OneToOneConverter<{ foo: string; bar: string }>();
-test(title(OneToOneConverter, "fromCreator"), (t) => t.deepEqual(oneToOne.fromCreator({ foo: "bar" }), { foo: "bar" }));
-test(title(OneToOneConverter, "fromUpdater"), (t) =>
-	t.deepEqual(oneToOne.fromUpdater("123", { foo: "bar" }), {
-		foo: "bar",
-		_id: "123",
-	}),
-);
-test(title(OneToOneConverter, "toDto"), (t) => t.deepEqual(oneToOne.toDto({ foo: "bar" }), { foo: "bar" }));
-test(title(OneToOneConverter, "fromSearchable: classic"), (t) =>
-	t.deepEqual(oneToOne.fromSearchable({ foo: { $neq: "bar" } }), {
-		foo: { $ne: "bar" },
-	}),
-);
-test(title(OneToOneConverter, "fromSearchable: undefined"), (t) => t.deepEqual(oneToOne.fromSearchable(undefined), {}));
-test(title(OneToOneConverter, "fromDtoFields"), (t) =>
-	t.deepEqual(oneToOne.fromDtoFields(["foo", "bar"]), ["foo", "bar"]),
-);
-test(inputTitle(OneToOneConverter, "fromDtoSort", "foo,-bar"), (t) =>
-	t.deepEqual(oneToOne.fromDtoSort(["foo", "-bar"]), { foo: 1, bar: -1 }),
-);
-test(inputTitle(OneToOneConverter, "fromDtoSort", "undefined"), (t) =>
-	t.is(oneToOne.fromDtoSort(undefined), undefined),
-);
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromCreator, "", (t) =>
+		t.deepEqual(oneToOne.fromCreator({ foo: "bar" }), { foo: "bar" }),
+	);
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromUpdater, "", (t) =>
+		t.deepEqual(oneToOne.fromUpdater("123", { foo: "bar" }), {
+			foo: "bar",
+			_id: "123",
+		}),
+	);
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.toDto, "", (t) => t.deepEqual(oneToOne.toDto({ foo: "bar" }), { foo: "bar" }));
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromSearchable, "classic", (t) =>
+		t.deepEqual(oneToOne.fromSearchable({ foo: { $neq: "bar" } }), {
+			foo: { $ne: "bar" },
+		}),
+	);
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromSearchable, "undefined", (t) =>
+		t.deepEqual(oneToOne.fromSearchable(undefined), {}),
+	);
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromDtoFields, "", (t) =>
+		t.deepEqual(oneToOne.fromDtoFields(["foo", "bar"]), ["foo", "bar"]),
+	);
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromDtoSort, "foo,-bar", (t) =>
+		t.deepEqual(oneToOne.fromDtoSort(["foo", "-bar"]), { foo: 1, bar: -1 }),
+	);
+});
+testClass(OneToOneConverter, (method) => {
+	method(OneToOneConverter.prototype.fromDtoSort, "undefined", (t) => t.is(oneToOne.fromDtoSort(undefined), undefined));
+});
 
 for (const [input, expected] of [
 	["foo,bar", ["foo", "bar"]],
@@ -249,29 +266,37 @@ for (const [input, expected] of [
 	["", []],
 	[1, undefined],
 ] as Array<[string, Array<string> | undefined]>) {
-	test(inputTitle(CommaListPipe, "Transforming", input), (t) =>
-		t.deepEqual(new CommaListPipe().transform(input), expected),
-	);
+	testClass(CommaListPipe, (method) => {
+		method(CommaListPipe.prototype.transform, testFunctionTestCase({ input }, expected), (t) =>
+			t.deepEqual(new CommaListPipe().transform(input), expected),
+		);
+	});
 }
-test(title(CommaListPipe, "Transforming undefined"), (t) =>
-	t.deepEqual(new CommaListPipe().transform(undefined), undefined),
-);
+testClass(CommaListPipe, (method) => {
+	method(CommaListPipe.prototype.transform, "undefined", (t) =>
+		t.deepEqual(new CommaListPipe().transform(undefined), undefined),
+	);
+});
 
-test(title(flatObjectKeys, "without parent"), (t) => {
+testFunction(flatObjectKeys, "without parent", (t) => {
 	t.deepEqual(flatObjectKeys({ foo: { bar: "hello" }, baz: "world" }), ["foo.bar", "baz"]);
 });
 
-test(title(flatObjectKeys, "with parent"), (t) => {
+testFunction(flatObjectKeys, "with parent", (t) => {
 	t.deepEqual(flatObjectKeys({ foo: { bar: "hello" }, baz: "world" }, true), ["foo", "foo.bar", "baz"]);
 });
 
-test(title(RelativeUrl, RelativeUrl.prototype.removeParam.name), (t) => {
-	const url = RelativeUrl.from("/hello?value=world&foo=bar");
-	url.removeParam("foo");
-	t.is(url.toString(), "/hello?value=world");
+testClass(RelativeUrl, (method) => {
+	method(RelativeUrl.prototype.removeParam, "", (t) => {
+		const url = RelativeUrl.from("/hello?value=world&foo=bar");
+		url.removeParam("foo");
+		t.is(url.toString(), "/hello?value=world");
+	});
 });
-test(title(RelativeUrl, RelativeUrl.prototype.onlyKeepParams.name), (t) => {
-	const url = RelativeUrl.from("/hello?value=world&foo=bar");
-	url.onlyKeepParams(["foo"]);
-	t.is(url.toString(), "/hello?foo=bar");
+testClass(RelativeUrl, (method) => {
+	method(RelativeUrl.prototype.onlyKeepParams.name, "", (t) => {
+		const url = RelativeUrl.from("/hello?value=world&foo=bar");
+		url.onlyKeepParams(["foo"]);
+		t.is(url.toString(), "/hello?foo=bar");
+	});
 });

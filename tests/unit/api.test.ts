@@ -1,8 +1,15 @@
-import test from "ava";
-import { FilterParserAction, ListOperator, LogicalOperator, ValueOperator, filtersValidator } from "../../src/api.js";
-import { title } from "../_helpers.js";
+import { ApiProperty } from "@nestjs/swagger";
+import {
+	FilterParserAction,
+	ListOperator,
+	LogicalOperator,
+	ValueOperator,
+	filtersValidator,
+	getDotKeys,
+} from "../../src/api.js";
+import { testFunction } from "../_helpers.js";
 
-test(title(filtersValidator, "All valid"), (t) => {
+testFunction(filtersValidator, "All valid", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown; hello: unknown; baz: unknown }>(
 			{
@@ -20,7 +27,7 @@ test(title(filtersValidator, "All valid"), (t) => {
 	);
 });
 
-test(title(filtersValidator, "Logical operator + invalid value operator: remove"), (t) => {
+testFunction(filtersValidator, "Logical operator + invalid value operator: remove", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown; hello: unknown; baz: unknown }>(
 			{
@@ -36,7 +43,7 @@ test(title(filtersValidator, "Logical operator + invalid value operator: remove"
 	);
 });
 
-test(title(filtersValidator, "No logical operator: remove"), (t) => {
+testFunction(filtersValidator, "No logical operator: remove", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown; hello: unknown; baz: unknown }>(
 			{
@@ -53,7 +60,7 @@ test(title(filtersValidator, "No logical operator: remove"), (t) => {
 	);
 });
 
-test(title(filtersValidator, "No logical operator: throw"), (t) => {
+testFunction(filtersValidator, "No logical operator: throw", (t) => {
 	t.throws(() =>
 		filtersValidator<{ foo: unknown; hello: unknown; baz: unknown }>(
 			{
@@ -66,7 +73,7 @@ test(title(filtersValidator, "No logical operator: throw"), (t) => {
 		),
 	);
 });
-test(title(filtersValidator, "List operator: primitive to array"), (t) => {
+testFunction(filtersValidator, "List operator: primitive to array", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -81,7 +88,7 @@ test(title(filtersValidator, "List operator: primitive to array"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "List operator: valid"), (t) => {
+testFunction(filtersValidator, "List operator: valid", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -96,7 +103,7 @@ test(title(filtersValidator, "List operator: valid"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "List operator: invalid, removed"), (t) => {
+testFunction(filtersValidator, "List operator: invalid, removed", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -111,7 +118,7 @@ test(title(filtersValidator, "List operator: invalid, removed"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Value operator: invalid, throw"), (t) => {
+testFunction(filtersValidator, "Value operator: invalid, throw", (t) => {
 	t.throws(() =>
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -123,7 +130,7 @@ test(title(filtersValidator, "Value operator: invalid, throw"), (t) => {
 		),
 	);
 });
-test(title(filtersValidator, "Value operator: invalid, removed"), (t) => {
+testFunction(filtersValidator, "Value operator: invalid, removed", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -138,7 +145,7 @@ test(title(filtersValidator, "Value operator: invalid, removed"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "List operator: invalid, throw"), (t) => {
+testFunction(filtersValidator, "List operator: invalid, throw", (t) => {
 	t.throws(() =>
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -150,7 +157,7 @@ test(title(filtersValidator, "List operator: invalid, throw"), (t) => {
 		),
 	);
 });
-test(title(filtersValidator, "Invalid operator: removed"), (t) => {
+testFunction(filtersValidator, "Invalid operator: removed", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -165,7 +172,7 @@ test(title(filtersValidator, "Invalid operator: removed"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Invalid operator: throw"), (t) => {
+testFunction(filtersValidator, "Invalid operator: throw", (t) => {
 	t.throws(() =>
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -177,7 +184,7 @@ test(title(filtersValidator, "Invalid operator: throw"), (t) => {
 		),
 	);
 });
-test(title(filtersValidator, "Primitive: null"), (t) => {
+testFunction(filtersValidator, "Primitive: null", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -192,7 +199,7 @@ test(title(filtersValidator, "Primitive: null"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Primitive: string"), (t) => {
+testFunction(filtersValidator, "Primitive: string", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -207,7 +214,7 @@ test(title(filtersValidator, "Primitive: string"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Primitive: number"), (t) => {
+testFunction(filtersValidator, "Primitive: number", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -222,7 +229,7 @@ test(title(filtersValidator, "Primitive: number"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Primitive: boolean"), (t) => {
+testFunction(filtersValidator, "Primitive: boolean", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{
@@ -237,7 +244,7 @@ test(title(filtersValidator, "Primitive: boolean"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Invalid field: removed"), (t) => {
+testFunction(filtersValidator, "Invalid field: removed", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown; bar: unknown }>(
 			{
@@ -253,7 +260,7 @@ test(title(filtersValidator, "Invalid field: removed"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Invalid field: throw"), (t) => {
+testFunction(filtersValidator, "Invalid field: throw", (t) => {
 	t.throws(() =>
 		filtersValidator<{ foo: unknown; bar: unknown }>(
 			{
@@ -267,7 +274,7 @@ test(title(filtersValidator, "Invalid field: throw"), (t) => {
 	);
 });
 
-test(title(filtersValidator, "Invalid field: do nothing"), (t) => {
+testFunction(filtersValidator, "Invalid field: do nothing", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown; bar: unknown }>(
 			{
@@ -284,7 +291,7 @@ test(title(filtersValidator, "Invalid field: do nothing"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "undefined input"), (t) => {
+testFunction(filtersValidator, "undefined input", (t) => {
 	t.is(
 		filtersValidator<{ foo: unknown; bar: unknown }>(
 			undefined,
@@ -296,7 +303,7 @@ test(title(filtersValidator, "undefined input"), (t) => {
 	);
 });
 
-test(title(filtersValidator, "Empty logical operator 1"), (t) => {
+testFunction(filtersValidator, "Empty logical operator 1", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{ $or: undefined },
@@ -309,7 +316,7 @@ test(title(filtersValidator, "Empty logical operator 1"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Empty logical operator 2"), (t) => {
+testFunction(filtersValidator, "Empty logical operator 2", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{ $or: [] },
@@ -322,7 +329,7 @@ test(title(filtersValidator, "Empty logical operator 2"), (t) => {
 		},
 	);
 });
-test(title(filtersValidator, "Empty logical operator 3"), (t) => {
+testFunction(filtersValidator, "Empty logical operator 3", (t) => {
 	t.deepEqual(
 		filtersValidator<{ foo: unknown }>(
 			{ $or: [{}] },
@@ -334,4 +341,33 @@ test(title(filtersValidator, "Empty logical operator 3"), (t) => {
 			$or: [{}],
 		},
 	);
+});
+
+class SimpleClass {
+	@ApiProperty()
+	foo!: string;
+	@ApiProperty()
+	bar!: number;
+}
+class NestedClass {
+	@ApiProperty()
+	foobar!: SimpleClass;
+	@ApiProperty()
+	baz!: boolean;
+}
+class NotAnnotatedClass {
+	foobar!: SimpleClass;
+	baz!: boolean;
+}
+testFunction(getDotKeys, "undefined", (t) => {
+	t.deepEqual(getDotKeys(undefined), []);
+});
+testFunction(getDotKeys, "Simple", (t) => {
+	t.deepEqual(getDotKeys(SimpleClass), ["foo", "bar"]);
+});
+testFunction(getDotKeys, "Nested", (t) => {
+	t.deepEqual(getDotKeys(NestedClass), ["foobar.foo", "foobar.bar", "baz"]);
+});
+testFunction(getDotKeys, "Unannotated class", (t) => {
+	t.deepEqual(getDotKeys(NotAnnotatedClass), []);
 });

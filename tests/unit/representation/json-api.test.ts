@@ -1,34 +1,34 @@
-import test from "ava";
-
 import { ProblemDetailException } from "@sjfrhafe/nest-problem-details";
 import type { JsonObject } from "../../../src/index.js";
 import JsonApi from "../../../src/representation/json-api.js";
-import { genericTitle, inputTitle, property, title } from "../../_helpers.js";
+import { testClass } from "../../_helpers.js";
 
-test(genericTitle(property("JsonApi", JsonApi.renderOne)), (t) => {
-	t.deepEqual(
-		JsonApi.renderOne("123", "people", "/people/123", {
-			firstName: "John",
-			lastName: "Doe",
-			age: null,
-			city: "unknown",
-		}),
-		{
-			data: {
-				id: "123",
-				type: "people",
-				attributes: {
-					firstName: "John",
-					lastName: "Doe",
-					age: null,
-					city: "unknown",
+testClass("JsonApi", (method) => {
+	method(JsonApi.renderOne, "", (t) => {
+		t.deepEqual(
+			JsonApi.renderOne("123", "people", "/people/123", {
+				firstName: "John",
+				lastName: "Doe",
+				age: null,
+				city: "unknown",
+			}),
+			{
+				data: {
+					id: "123",
+					type: "people",
+					attributes: {
+						firstName: "John",
+						lastName: "Doe",
+						age: null,
+						city: "unknown",
+					},
+				},
+				links: {
+					self: "/people/123",
 				},
 			},
-			links: {
-				self: "/people/123",
-			},
-		},
-	);
+		);
+	});
 });
 
 const pageResources = new Map([
@@ -50,327 +50,139 @@ const pageData = [
 	{ id: "8", type: "color", attributes: { name: "teal" } },
 ];
 
-test(title(property("JsonApi", JsonApi.renderPage), "One page"), (t) => {
-	t.deepEqual(
-		JsonApi.renderPage(
-			"color",
-			"/colors?page[size]=10&page[number]=1&fields=name,hex",
-			7,
-			{ size: 10, current: 1 },
-			pageResources,
-		),
-		{
-			data: pageData,
-			links: {
-				self: "/colors?fields=name%2Chex&page%5Bnumber%5D=1&page%5Bsize%5D=10",
-				first: "/colors?fields=name%2Chex&page%5Bnumber%5D=1&page%5Bsize%5D=10",
-				last: "/colors?fields=name%2Chex&page%5Bnumber%5D=1&page%5Bsize%5D=10",
-			},
-			meta: {
-				totalCount: 7,
-				page: {
-					size: 10,
-					count: 1,
-					current: 1,
+testClass("JsonApi", (method) => {
+	method(JsonApi.renderPage, "One page", (t) => {
+		t.deepEqual(
+			JsonApi.renderPage(
+				"color",
+				"/colors?page[size]=10&page[number]=1&fields=name,hex",
+				7,
+				{ size: 10, current: 1 },
+				pageResources,
+			),
+			{
+				data: pageData,
+				links: {
+					self: "/colors?fields=name%2Chex&page%5Bnumber%5D=1&page%5Bsize%5D=10",
+					first: "/colors?fields=name%2Chex&page%5Bnumber%5D=1&page%5Bsize%5D=10",
+					last: "/colors?fields=name%2Chex&page%5Bnumber%5D=1&page%5Bsize%5D=10",
+				},
+				meta: {
+					totalCount: 7,
+					page: {
+						size: 10,
+						count: 1,
+						current: 1,
+					},
 				},
 			},
-		},
-	);
-});
+		);
+	});
 
-test(title(property("JsonApi", JsonApi.renderPage), "page 1/3"), (t) => {
-	t.deepEqual(
-		JsonApi.renderPage("color", "/colors?page[size]=10&page[number]=1", 27, { size: 10, current: 1 }, pageResources),
-		{
-			data: pageData,
-			links: {
-				self: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
-				first: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
-				last: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
-				next: "/colors?page%5Bnumber%5D=2&page%5Bsize%5D=10",
-			},
-			meta: {
-				totalCount: 27,
-				page: {
+	method(JsonApi.renderPage, "page 1/3", (t) => {
+		t.deepEqual(
+			JsonApi.renderPage(
+				"color",
+				"/colors?page[size]=10&page[number]=1",
+				27,
+				{
 					size: 10,
-					count: 3,
 					current: 1,
 				},
+				pageResources,
+			),
+			{
+				data: pageData,
+				links: {
+					self: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
+					first: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
+					last: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
+					next: "/colors?page%5Bnumber%5D=2&page%5Bsize%5D=10",
+				},
+				meta: {
+					totalCount: 27,
+					page: {
+						size: 10,
+						count: 3,
+						current: 1,
+					},
+				},
 			},
-		},
-	);
-});
+		);
+	});
 
-test(title(property("JsonApi", JsonApi.renderPage), "page 2/3"), (t) => {
-	t.deepEqual(
-		JsonApi.renderPage("color", "/colors?page[size]=10&page[number]=1", 27, { size: 10, current: 2 }, pageResources),
-		{
-			data: pageData,
-			links: {
-				self: "/colors?page%5Bnumber%5D=2&page%5Bsize%5D=10",
-				first: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
-				last: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
-				next: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
-				prev: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
-			},
-			meta: {
-				totalCount: 27,
-				page: {
+	method(JsonApi.renderPage, "page 2/3", (t) => {
+		t.deepEqual(
+			JsonApi.renderPage(
+				"color",
+				"/colors?page[size]=10&page[number]=1",
+				27,
+				{
 					size: 10,
-					count: 3,
 					current: 2,
 				},
+				pageResources,
+			),
+			{
+				data: pageData,
+				links: {
+					self: "/colors?page%5Bnumber%5D=2&page%5Bsize%5D=10",
+					first: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
+					last: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
+					next: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
+					prev: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
+				},
+				meta: {
+					totalCount: 27,
+					page: {
+						size: 10,
+						count: 3,
+						current: 2,
+					},
+				},
 			},
-		},
-	);
-});
+		);
+	});
 
-test(title(property("JsonApi", JsonApi.renderPage), "page 3/3"), (t) => {
-	t.deepEqual(
-		JsonApi.renderPage("color", "/colors?page[size]=10&page[number]=1", 27, { size: 10, current: 3 }, pageResources),
-		{
-			data: pageData,
-			links: {
-				self: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
-				first: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
-				last: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
-				prev: "/colors?page%5Bnumber%5D=2&page%5Bsize%5D=10",
-			},
-			meta: {
-				totalCount: 27,
-				page: {
+	method(JsonApi.renderPage, "page 3/3", (t) => {
+		t.deepEqual(
+			JsonApi.renderPage(
+				"color",
+				"/colors?page[size]=10&page[number]=1",
+				27,
+				{
 					size: 10,
-					count: 3,
 					current: 3,
 				},
-			},
-		},
-	);
-});
-
-test(title(property("JsonApi", JsonApi.parseCreateRequest), "valid"), (t) => {
-	t.deepEqual(
-		JsonApi.parseCreateRequest(
+				pageResources,
+			),
 			{
-				data: {
-					type: "people",
-					attributes: {
-						firstName: "John",
-						lastName: "Doe",
-						age: null,
-						city: "unknown",
+				data: pageData,
+				links: {
+					self: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
+					first: "/colors?page%5Bnumber%5D=1&page%5Bsize%5D=10",
+					last: "/colors?page%5Bnumber%5D=3&page%5Bsize%5D=10",
+					prev: "/colors?page%5Bnumber%5D=2&page%5Bsize%5D=10",
+				},
+				meta: {
+					totalCount: 27,
+					page: {
+						size: 10,
+						count: 3,
+						current: 3,
 					},
 				},
 			},
-			"people",
-		),
-		{
-			firstName: "John",
-			lastName: "Doe",
-			age: null,
-			city: "unknown",
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "root"), (t) => {
-	t.throws(() => JsonApi.parseCreateRequest("foobar" as unknown as JsonObject, "people"), {
-		instanceOf: ProblemDetailException,
+		);
 	});
 });
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "data"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					data: "foobar",
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "data.type"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					data: {
-						type: 20,
-						attributes: {
-							firstName: "John",
-							lastName: "Doe",
-							age: null,
-							city: "unknown",
-						},
-					},
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid type", "data.attributes"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					data: {
-						type: "people",
-						attributes: "foobar",
-					},
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Invalid content", "type"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					data: {
-						type: "person",
-						attributes: {
-							firstName: "John",
-							lastName: "Doe",
-							age: null,
-							city: "unknown",
-						},
-					},
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Missing node", "data"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					type: "person",
-					attributes: {
-						firstName: "John",
-						lastName: "Doe",
-						age: null,
-						city: "unknown",
-					},
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Missing node", "data.type"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					data: {
-						attributes: {
-							firstName: "John",
-							lastName: "Doe",
-							age: null,
-							city: "unknown",
-						},
-					},
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseCreateRequest), "Missing node", "data.attributes"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseCreateRequest(
-				{
-					data: {
-						type: "person",
-						firstName: "John",
-						lastName: "Doe",
-						age: null,
-						city: "unknown",
-					},
-				},
-				"people",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
 
-test(title(property("JsonApi", JsonApi.parseUpdateRequest), "valid"), (t) => {
-	t.deepEqual(
-		JsonApi.parseUpdateRequest(
-			{
-				data: {
-					id: "123",
-					type: "people",
-					attributes: {
-						firstName: "John",
-						lastName: "Doe",
-						age: null,
-						city: "unknown",
-					},
-				},
-			},
-			"people",
-			"123",
-		),
-		{
-			firstName: "John",
-			lastName: "Doe",
-			age: null,
-			city: "unknown",
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid content", "type"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
+testClass("JsonApi", (method) => {
+	method(JsonApi.parseCreateRequest, "valid", (t) => {
+		t.deepEqual(
+			JsonApi.parseCreateRequest(
 				{
 					data: {
-						id: "123",
-						type: "person",
-						attributes: {
-							firstName: "John",
-							lastName: "Doe",
-							age: null,
-							city: "unknown",
-						},
-					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid content", "id"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					data: {
-						id: "1234",
 						type: "people",
 						attributes: {
 							firstName: "John",
@@ -381,87 +193,107 @@ test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid conten
 					},
 				},
 				"people",
-				"123",
 			),
-		{
+			{
+				firstName: "John",
+				lastName: "Doe",
+				age: null,
+				city: "unknown",
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Invalid type: root", (t) => {
+		t.throws(() => JsonApi.parseCreateRequest("foobar" as unknown as JsonObject, "people"), {
 			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					id: "123",
-					type: "person",
-					attributes: {
-						firstName: "John",
-						lastName: "Doe",
-						age: null,
-						city: "unknown",
+		});
+	});
+
+	method(JsonApi.parseCreateRequest, "Invalid type: data", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
+						data: "foobar",
 					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data.type"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					id: "123",
-					data: {
-						attributes: {
-							firstName: "John",
-							lastName: "Doe",
-							age: null,
-							city: "unknown",
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Invalid type: data.type", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
+						data: {
+							type: 20,
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
 						},
 					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data.attributes"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					id: "123",
-					data: {
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Invalid type: data.attributes", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
+						data: {
+							type: "people",
+							attributes: "foobar",
+						},
+					},
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Invalid content: type", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
+						data: {
+							type: "person",
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Missing node: data", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
 						type: "person",
-						firstName: "John",
-						lastName: "Doe",
-						age: null,
-						city: "unknown",
-					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node", "data.id"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					type: "people",
-					data: {
 						attributes: {
 							firstName: "John",
 							lastName: "Doe",
@@ -469,85 +301,65 @@ test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Missing node",
 							city: "unknown",
 						},
 					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "root"), (t) => {
-	t.throws(() => JsonApi.parseUpdateRequest("foobar" as unknown as JsonObject, "people", "123"), {
-		instanceOf: ProblemDetailException,
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Missing node: data.type", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
+						data: {
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseCreateRequest, "Missing node: data.attributes", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseCreateRequest(
+					{
+						data: {
+							type: "person",
+							firstName: "John",
+							lastName: "Doe",
+							age: null,
+							city: "unknown",
+						},
+					},
+					"people",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
 	});
 });
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					data: "foobar",
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data.type"), (t) => {
-	t.throws(
-		() =>
+
+testClass("JsonApi", (method) => {
+	method(JsonApi.parseUpdateRequest, "valid", (t) => {
+		t.deepEqual(
 			JsonApi.parseUpdateRequest(
 				{
 					data: {
 						id: "123",
-						type: 20,
-						attributes: {
-							firstName: "John",
-							lastName: "Doe",
-							age: null,
-							city: "unknown",
-						},
-					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data.attributes"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					data: {
-						id: "123",
-						type: "people",
-						attributes: "foobar",
-					},
-				},
-				"people",
-				"123",
-			),
-		{
-			instanceOf: ProblemDetailException,
-		},
-	);
-});
-test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type", "data.id"), (t) => {
-	t.throws(
-		() =>
-			JsonApi.parseUpdateRequest(
-				{
-					data: {
-						id: 123,
 						type: "people",
 						attributes: {
 							firstName: "John",
@@ -560,8 +372,248 @@ test(inputTitle(property("JsonApi", JsonApi.parseUpdateRequest), "Invalid type",
 				"people",
 				"123",
 			),
-		{
+			{
+				firstName: "John",
+				lastName: "Doe",
+				age: null,
+				city: "unknown",
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid content: type", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						data: {
+							id: "123",
+							type: "person",
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid content: id", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						data: {
+							id: "1234",
+							type: "people",
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Missing node: data", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						id: "123",
+						type: "person",
+						attributes: {
+							firstName: "John",
+							lastName: "Doe",
+							age: null,
+							city: "unknown",
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Missing node: data.type", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						id: "123",
+						data: {
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Missing node: data.attributes", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						id: "123",
+						data: {
+							type: "person",
+							firstName: "John",
+							lastName: "Doe",
+							age: null,
+							city: "unknown",
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Missing node: data.id", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						type: "people",
+						data: {
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid type: root", (t) => {
+		t.throws(() => JsonApi.parseUpdateRequest("foobar" as unknown as JsonObject, "people", "123"), {
 			instanceOf: ProblemDetailException,
-		},
-	);
+		});
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid type: data", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						data: "foobar",
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid type: data.type", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						data: {
+							id: "123",
+							type: 20,
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid type: data.attributes", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						data: {
+							id: "123",
+							type: "people",
+							attributes: "foobar",
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
+
+	method(JsonApi.parseUpdateRequest, "Invalid type: data.id", (t) => {
+		t.throws(
+			() =>
+				JsonApi.parseUpdateRequest(
+					{
+						data: {
+							id: 123,
+							type: "people",
+							attributes: {
+								firstName: "John",
+								lastName: "Doe",
+								age: null,
+								city: "unknown",
+							},
+						},
+					},
+					"people",
+					"123",
+				),
+			{
+				instanceOf: ProblemDetailException,
+			},
+		);
+	});
 });

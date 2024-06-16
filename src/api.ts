@@ -185,13 +185,12 @@ export function filtersValidator<T extends object>(
 export function getDotKeys<T extends object, R = DotKeys<T>>(dtoConstructor: Type<T> | undefined): Array<R> {
 	if (dtoConstructor === undefined) return [];
 	const props =
-		(Reflect.getMetadata("swagger/apiModelPropertiesArray", dtoConstructor.prototype) as Array<string>).map((item) =>
+		(Reflect.getMetadata("swagger/apiModelPropertiesArray", dtoConstructor.prototype) as Array<string>)?.map((item) =>
 			item.substring(1),
 		) ?? [];
 	return props.flatMap((prop) => {
 		const apiMeta = Reflect.getMetadata("swagger/apiModelProperties", dtoConstructor.prototype, prop);
-		const designMeta = Reflect.getMetadata("design:type", dtoConstructor.prototype, prop);
-		const type = apiMeta.type ? apiMeta.type : designMeta;
+		const type = apiMeta.type;
 
 		if (typeof type === "function" && type !== Number && type !== String && type !== Boolean) {
 			return getDotKeys(type).map((key) => `${prop}.${key}`);

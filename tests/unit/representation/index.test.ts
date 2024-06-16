@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ProblemDetailException } from "@sjfrhafe/nest-problem-details";
-import test from "ava";
 import sinon, { type SinonStub } from "sinon";
 import { BaseDto, type Representation } from "../../../src/index.js";
 import {
@@ -10,7 +9,7 @@ import {
 	getSwaggerExtension,
 	validateContentType,
 } from "../../../src/representation/index.js";
-import { genericTitle, title } from "../../_helpers.js";
+import { testFunction } from "../../_helpers.js";
 
 class AttributeClass extends BaseDto {
 	@ApiProperty()
@@ -55,7 +54,7 @@ function createMock<Without extends keyof Required<Representation> = never>(
 	};
 }
 
-test(genericTitle(getSwaggerExtension), (t) => {
+testFunction(getSwaggerExtension, "", (t) => {
 	const mocked = createMock([]);
 	mocked.getOneResponseSwaggerExtension.returns({
 		extraModels: [AttributeClass],
@@ -78,7 +77,7 @@ test(genericTitle(getSwaggerExtension), (t) => {
 	});
 });
 
-test(title(getRenderer, "found"), (t) => {
+testFunction(getRenderer, "found", (t) => {
 	const fakeRepresentation = createMock();
 	const renderer = getRenderer([fakeRepresentation], "test", "renderOne");
 	t.is(
@@ -107,7 +106,7 @@ test(title(getRenderer, "found"), (t) => {
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 	t.is(renderer, fakeRepresentation.renderOne);
 });
-test(title(getRenderer, "not found"), (t) => {
+testFunction(getRenderer, "not found", (t) => {
 	const fakeRepresentation = createMock(["renderOne"]);
 	t.throws(() => getRenderer([fakeRepresentation], "test", "renderOne"), { instanceOf: ProblemDetailException });
 	t.is(
@@ -134,11 +133,11 @@ test(title(getRenderer, "not found"), (t) => {
 	t.is(fakeRepresentation.parseUpdateRequest.callCount, 0, "parseUpdateRequest have not been call");
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 });
-test(title(getRenderer, "no representation"), (t) => {
+testFunction(getRenderer, "no representation", (t) => {
 	t.throws(() => getRenderer([], "test", "renderOne"), { instanceOf: ProblemDetailException });
 });
 
-test(title(getParser, "found"), (t) => {
+testFunction(getParser, "found", (t) => {
 	const fakeRepresentation = createMock();
 	const parser = getParser([fakeRepresentation], "test", "parseCreateRequest");
 	t.is(
@@ -167,7 +166,7 @@ test(title(getParser, "found"), (t) => {
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 	t.is(parser, fakeRepresentation.parseCreateRequest);
 });
-test(title(getParser, "No parser"), (t) => {
+testFunction(getParser, "No parser", (t) => {
 	const fakeRepresentation = createMock(["parseCreateRequest"]);
 	t.throws(() => getParser([fakeRepresentation], "test", "parseCreateRequest"), { instanceOf: ProblemDetailException });
 	t.is(
@@ -194,7 +193,7 @@ test(title(getParser, "No parser"), (t) => {
 	t.is(fakeRepresentation.renderOne.callCount, 0, "renderOne have not been call");
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 });
-test(title(getParser, "No content type"), (t) => {
+testFunction(getParser, "No content type", (t) => {
 	const fakeRepresentation = createMock();
 	t.throws(() => getParser([fakeRepresentation], "test2", "parseCreateRequest"), {
 		instanceOf: ProblemDetailException,
@@ -225,7 +224,7 @@ test(title(getParser, "No content type"), (t) => {
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 });
 
-test(title(getContentType, "found"), (t) => {
+testFunction(getContentType, "found", (t) => {
 	const fakeRepresentation = createMock();
 	const types = getContentType([fakeRepresentation], "getOneResponseSwaggerExtension");
 	t.is(
@@ -254,7 +253,7 @@ test(title(getContentType, "found"), (t) => {
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 	t.deepEqual(types, ["test"]);
 });
-test(title(getContentType, "no function"), (t) => {
+testFunction(getContentType, "no function", (t) => {
 	const fakeRepresentation = createMock(["getOneResponseSwaggerExtension"]);
 	const types = getContentType([fakeRepresentation], "getOneResponseSwaggerExtension");
 	t.is(
@@ -279,7 +278,7 @@ test(title(getContentType, "no function"), (t) => {
 	t.deepEqual(types, []);
 });
 
-test(title(validateContentType, "default to first if not specified"), (t) => {
+testFunction(validateContentType, "default to first if not specified", (t) => {
 	const fakeRepresentation = createMock();
 	const type = validateContentType([fakeRepresentation], "getOneResponseSwaggerExtension");
 	t.is(
@@ -308,7 +307,7 @@ test(title(validateContentType, "default to first if not specified"), (t) => {
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 	t.deepEqual(type, "test");
 });
-test(title(validateContentType, "Match"), (t) => {
+testFunction(validateContentType, "Match", (t) => {
 	const fakeRepresentation = createMock();
 	const type = validateContentType([fakeRepresentation], "getOneResponseSwaggerExtension", "test");
 	t.is(
@@ -337,7 +336,7 @@ test(title(validateContentType, "Match"), (t) => {
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 	t.deepEqual(type, "test");
 });
-test(title(validateContentType, "Fail if not content type exist"), (t) => {
+testFunction(validateContentType, "Fail if not content type exist", (t) => {
 	const fakeRepresentation = createMock(["getOneResponseSwaggerExtension"]);
 	t.throws(() => validateContentType([fakeRepresentation], "getOneResponseSwaggerExtension", "test"), {
 		instanceOf: ProblemDetailException,
@@ -362,7 +361,7 @@ test(title(validateContentType, "Fail if not content type exist"), (t) => {
 	t.is(fakeRepresentation.renderOne.callCount, 0, "renderOne have not been call");
 	t.is(fakeRepresentation.renderPage.callCount, 0, "renderPage have not been call");
 });
-test(title(validateContentType, "Fail if content type don't match"), (t) => {
+testFunction(validateContentType, "Fail if content type don't match", (t) => {
 	const fakeRepresentation = createMock();
 	t.throws(() => validateContentType([fakeRepresentation], "getOneResponseSwaggerExtension", "test2"), {
 		instanceOf: ProblemDetailException,

@@ -1,6 +1,6 @@
 {
 	"name": "@macfja/nestjs-mongoose",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "A simple solution to create a CRUD controller for a MongoDB collection in NestJS",
 	"main": "dist/index.cjs",
 	"module": "dist/index.mjs",
@@ -8,7 +8,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "NODE_ENV=production rollup -c",
-		"test": "c8 --reporter lcov --reporter text -- ava tests/run.test.ts",
+		"test": "c8 --reporter lcov --reporter text -- ava",
 		"lint": "run-p -l -c --aggregate-output lint:**",
 		"lint:biome": "biome check --colors=force .",
 		"lint:package.json": "pjv --warnings --recommendations --spec=npm",
