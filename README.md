@@ -1,8 +1,34 @@
 # Nest.js + Mongoose
 
-This package provide a simple solution to create a CRUD controller for a MongoDB collection.
+A simple solution to create a CRUD controller for a MongoDB collection.
 
-Support output format in Json:api, HAL, JSON+LD and JSON. _(Json:api, HAL are enabled by default)_
+![GitHub Repo stars](https://img.shields.io/github/stars/macfja/nestjs-mongoose?style=social)
+![Download per week](https://img.shields.io/npm/dw/@macfja/nestjs-mongoose)
+![License](https://img.shields.io/npm/l/@macfja/nestjs-mongoose)
+![NPM version](https://img.shields.io/npm/v/@macfja/nestjs-mongoose)
+[![JavaScript Style Guide: Biomejs](https://img.shields.io/badge/code%20style-biomejs-brightgreen.svg?style=flat)](https://biomejs.dev/ "One toolchain for your web project")
+
+## Features
+
+- CRUD operation
+  - **Create** a document
+  - **Read**: One or a list of document
+  - **Update** a document
+  - **Delete** a document
+- Complete OpenApi documentation
+- Convert a DTO (public object) to/from Mongo Entity (internal object)
+- Fine control on what is available (CRUD, fields, sorting)
+- Multiple input and output format (built-in: Json:api, HAL, JSON+LD and JSON)
+  - Input (Create and Update): Json:api and JSON
+  - Output (Read): Json:api, HAL, JSON+LD and JSON
+- Standard error output format ([RFC-9457](https://www.rfc-editor.org/rfc/rfc9457.html))
+- Full-customizable
+  - Override controller routes
+  - Add your custom input and output format
+  - Custom DTO converter
+- And much more...
+
+_(Json:api and HAL format are enabled by default)_
 
 ## Installation
 
@@ -237,7 +263,7 @@ type MongooseControllerOptions<Dto extends JsonObject, Creator extends JsonObjec
     - `read`: if `true`, the listing and getting one document are removed from the controller, the output of the creation and modification of a document is disabled (default: `false`)
     - `writing`: if `true`, updating, creating and deleting a document are removed from the controller (default: `false`)
 - `pageSize`, Allow to change the pagination size:
-    - `default`, the default page size is none is provided (default: `10`)
+    - `default`, the default page size if none is provided (default: `10`)
     - `max`, the maximum page size allowed. If the value requested by the user is superior, it is set to this value  (default: `200`)
 - `urlResolver`, The [`ProblemDetail`](https://github.com/sjfrhafe/nest-problem-details?tab=readme-ov-file#customize-auto-type-generation) error resolver (default: `undefined` => Resolve URL to `https://httpstatuses.com/`)
 - `logger`, The logger to use. Used by `ProblemDetail` (default: `undefined` => no log)

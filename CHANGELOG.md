@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.0.0 - 2024-06-22
+
+### Added
+
+- (doc) Example on override 
+- Add missing parameters in the controller interface
+
+### Changed
+
+- Improve README
+
+### Fixed
+
+- Typo
+
+### Removed
+
+- (doc) Remove old example
+
 ## 0.5.0 - 2024-06-16
 
 ### Added

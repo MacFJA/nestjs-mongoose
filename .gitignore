@@ -1,7 +1,6 @@
 /*.js
 node_modules/
 dist/
-/index.*js
 /.tsimp/
 /coverage/
 *.tgz

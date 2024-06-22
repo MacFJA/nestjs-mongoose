@@ -14,6 +14,21 @@ services:
       - "9229"
     depends_on:
       - mongo
+  override:
+    image: node:current-alpine
+    user: "${UID}:${GID}"
+    volumes:
+      - ../:/srv/app/
+    working_dir: /srv/app/example/override
+    entrypoint: npm run start:dev
+    environment:
+      PORT: 80
+      NODE_OPTIONS: --inspect-port=0.0.0.0
+    ports:
+      - "8083:80"
+      - "9229"
+    depends_on:
+      - mongo
   mongo:
     image: mongo
     environment:
@@ -36,7 +51,7 @@ services:
       - ./cats.csv:/cats.csv
     depends_on:
       - mongo
-  ui:
+  mongo-ui:
     image: mongo-express
     ports:
       - 8081:8081

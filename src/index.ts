@@ -86,19 +86,32 @@ export interface MongooseController<Dto extends JsonObject, Creator extends Json
 		request: Request,
 		filters?: SearchField<Dto>,
 		page?: { size: number; number: number },
-		fields?: unknown,
-		sort?: unknown,
+		fields?: Array<string>,
+		sort?: Array<string>,
+		accept?: string,
 	): Promise<JsonOf<Dto>>;
 
 	/**
 	 * Get one document by its Id
 	 */
-	getOne?(response: Response, request: Request, id: string, fields?: unknown): Promise<JsonOf<Dto> | never>;
+	getOne?(
+		response: Response,
+		request: Request,
+		id: string,
+		fields?: Array<string>,
+		accept?: string,
+	): Promise<JsonOf<Dto> | never>;
 
 	/**
 	 * Create one document
 	 */
-	createOne?(response: Response, request: Request, body: JsonOf<Creator>): Promise<JsonOf<Dto> | undefined | never>;
+	createOne?(
+		response: Response,
+		request: Request,
+		body: JsonOf<Creator>,
+		accept?: string,
+		receiveContentType?: string,
+	): Promise<JsonOf<Dto> | undefined | never>;
 	/**
 	 * Get one document
 	 */
@@ -107,8 +120,10 @@ export interface MongooseController<Dto extends JsonObject, Creator extends Json
 		request: Request,
 		body: JsonOf<Updater>,
 		id: string,
-		fields?: unknown,
+		fields?: Array<string>,
 		noContent?: boolean,
+		accept?: string,
+		receiveContentType?: string,
 	): Promise<JsonOf<Dto> | never | undefined>;
 	/**
 	 * Delete one document by its Id
@@ -171,7 +186,7 @@ export type MongooseControllerOptions<
 	 */
 	pageSize: Partial<{
 		/**
-		 * the default page size is none is provided (default: `10`)
+		 * the default page size if none is provided (default: `10`)
 		 */
 		default: number;
 		/**
